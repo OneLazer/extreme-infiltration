@@ -1,18 +1,19 @@
-[gd_scene format=4]
+[gd_scene format=4 uid="uid://ec6kcgnrtjbk"]
 
-[ext_resource type="Script" path="res://scripts/level.gd" id="1_qdeet"]
+[ext_resource type="Script" uid="uid://d3dvcvif0pugs" path="res://scripts/level.gd" id="1_qdeet"]
 [ext_resource type="PackedScene" path="res://scenes/art/street_backdrop.tscn" id="2_y72ps"]
-[ext_resource type="Script" path="res://scripts/art/back_wall.gd" id="3_l0eo6"]
+[ext_resource type="Script" uid="uid://q87ftsyjaopd" path="res://scripts/art/back_wall.gd" id="3_l0eo6"]
 [ext_resource type="PackedScene" path="res://scenes/flying_guard.tscn" id="3_xw3ee"]
-[ext_resource type="Script" path="res://scripts/art/prop.gd" id="4_d3o6j"]
+[ext_resource type="Script" uid="uid://rbexdhgrovke" path="res://scripts/art/prop.gd" id="4_d3o6j"]
+[ext_resource type="Texture2D" uid="uid://diqtl3fgc451v" path="res://assets/props/props.png" id="4_xw3ee"]
 [ext_resource type="PackedScene" path="res://scenes/ground_guard.tscn" id="5_d3o6j"]
-[ext_resource type="Script" path="res://scripts/art/glow_spot.gd" id="5_pdl2l"]
-[ext_resource type="Script" path="res://scripts/art/light_cone.gd" id="6_2t17w"]
+[ext_resource type="Script" uid="uid://yrpxnidbhkeo" path="res://scripts/art/glow_spot.gd" id="5_pdl2l"]
+[ext_resource type="Script" uid="uid://coi3hepippxt0" path="res://scripts/art/light_cone.gd" id="6_2t17w"]
 [ext_resource type="PackedScene" path="res://scenes/exit.tscn" id="7_2t17w"]
-[ext_resource type="TileSet" path="res://assets/tiles/street_tileset.tres" id="7_bm28l"]
+[ext_resource type="TileSet" uid="uid://br4obv8flnbqg" path="res://assets/tiles/street_tileset.tres" id="7_bm28l"]
 [ext_resource type="PackedScene" path="res://scenes/weapon_pickup.tscn" id="9_2qse1"]
 [ext_resource type="PackedScene" path="res://scenes/player.tscn" id="11_m68c3"]
-[ext_resource type="Script" path="res://scripts/debug_overlay.gd" id="13_dbg0"]
+[ext_resource type="Script" uid="uid://cen6stuus1t83" path="res://scripts/debug_overlay.gd" id="13_dbg0"]
 
 [sub_resource type="Environment" id="Environment_6g61c"]
 background_mode = 3
@@ -20,6 +21,54 @@ glow_enabled = true
 glow_intensity = 0.9
 glow_bloom = 0.05
 glow_blend_mode = 0
+
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_l0eo6"]
+blend_mode = 1
+
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_d3o6j"]
+blend_mode = 1
+
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_pdl2l"]
+blend_mode = 1
+
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_2t17w"]
+blend_mode = 1
+
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_bm28l"]
+blend_mode = 1
+
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_2qse1"]
+blend_mode = 1
+
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_xt52j"]
+blend_mode = 1
+
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_m68c3"]
+blend_mode = 1
+
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_p6fww"]
+blend_mode = 1
+
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_6g61c"]
+blend_mode = 1
+
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_g2xra"]
+blend_mode = 1
+
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_bkw67"]
+blend_mode = 1
+
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_40vlm"]
+blend_mode = 1
+
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_q27ur"]
+blend_mode = 1
+
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_685d6"]
+blend_mode = 1
+
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_6044w"]
+blend_mode = 1
 
 [node name="Level01" type="Node2D" unique_id=363100469]
 script = ExtResource("1_qdeet")
@@ -36,17 +85,28 @@ script = ExtResource("3_l0eo6")
 
 [node name="Plant" type="Sprite2D" parent="Decor" unique_id=1741596454]
 position = Vector2(418, 96)
+texture = ExtResource("4_xw3ee")
+centered = false
+offset = Vector2(-5, -15)
+region_enabled = true
+region_rect = Rect2(0, 31, 10, 15)
 script = ExtResource("4_d3o6j")
 prop_name = "plant"
 
 [node name="Vending" type="Sprite2D" parent="Decor" unique_id=1402814208]
 position = Vector2(455, 96)
+texture = ExtResource("4_xw3ee")
+centered = false
+offset = Vector2(-7, -24)
+region_enabled = true
+region_rect = Rect2(68, 0, 14, 24)
 script = ExtResource("4_d3o6j")
 prop_name = "vending"
 glow = 1.6
 flicker = 1
 
 [node name="Glow" type="Node2D" parent="Decor" unique_id=1350531139]
+material = SubResource("CanvasItemMaterial_l0eo6")
 position = Vector2(455, 88)
 script = ExtResource("5_pdl2l")
 radius = 22.0
@@ -55,29 +115,55 @@ strength = 0.22
 
 [node name="Cooler" type="Sprite2D" parent="Decor" unique_id=602068817]
 position = Vector2(499, 96)
+texture = ExtResource("4_xw3ee")
+centered = false
+offset = Vector2(-4, -17)
+region_enabled = true
+region_rect = Rect2(83, 0, 8, 17)
 script = ExtResource("4_d3o6j")
 prop_name = "cooler"
 
 [node name="Trash" type="Sprite2D" parent="Decor" unique_id=264082698]
 position = Vector2(540, 96)
+texture = ExtResource("4_xw3ee")
+centered = false
+offset = Vector2(-3, -9)
+region_enabled = true
+region_rect = Rect2(108, 31, 7, 9)
 script = ExtResource("4_d3o6j")
 prop_name = "trash"
 
 [node name="Trash2" type="Sprite2D" parent="Decor" unique_id=496034140]
 position = Vector2(587, 96)
+texture = ExtResource("4_xw3ee")
+centered = false
+offset = Vector2(-3, -9)
+region_enabled = true
+region_rect = Rect2(108, 31, 7, 9)
 script = ExtResource("4_d3o6j")
 prop_name = "trash"
 
 [node name="Desk" type="Sprite2D" parent="Decor" unique_id=1073322118]
 position = Vector2(93, 168)
+texture = ExtResource("4_xw3ee")
+centered = false
+offset = Vector2(-13, -15)
+region_enabled = true
+region_rect = Rect2(92, 0, 26, 15)
 script = ExtResource("4_d3o6j")
 
 [node name="Chair" type="Sprite2D" parent="Decor" unique_id=207234109]
 position = Vector2(110, 168)
+texture = ExtResource("4_xw3ee")
+centered = false
+offset = Vector2(-4, -10)
+region_enabled = true
+region_rect = Rect2(99, 31, 8, 10)
 script = ExtResource("4_d3o6j")
 prop_name = "chair"
 
 [node name="Glow2" type="Node2D" parent="Decor" unique_id=471949904]
+material = SubResource("CanvasItemMaterial_d3o6j")
 position = Vector2(93, 157)
 script = ExtResource("5_pdl2l")
 radius = 14.0
@@ -86,17 +172,28 @@ strength = 0.16
 
 [node name="Plant2" type="Sprite2D" parent="Decor" unique_id=1078734653]
 position = Vector2(135, 168)
+texture = ExtResource("4_xw3ee")
+centered = false
+offset = Vector2(-5, -15)
+region_enabled = true
+region_rect = Rect2(0, 31, 10, 15)
 script = ExtResource("4_d3o6j")
 prop_name = "plant"
 
 [node name="Vending2" type="Sprite2D" parent="Decor" unique_id=256013009]
 position = Vector2(197, 168)
+texture = ExtResource("4_xw3ee")
+centered = false
+offset = Vector2(-7, -24)
+region_enabled = true
+region_rect = Rect2(68, 0, 14, 24)
 script = ExtResource("4_d3o6j")
 prop_name = "vending"
 glow = 1.6
 flicker = 1
 
 [node name="Glow3" type="Node2D" parent="Decor" unique_id=222854619]
+material = SubResource("CanvasItemMaterial_pdl2l")
 position = Vector2(197, 160)
 script = ExtResource("5_pdl2l")
 radius = 22.0
@@ -105,142 +202,228 @@ strength = 0.22
 
 [node name="Trash3" type="Sprite2D" parent="Decor" unique_id=2132111813]
 position = Vector2(241, 168)
+texture = ExtResource("4_xw3ee")
+centered = false
+offset = Vector2(-3, -9)
+region_enabled = true
+region_rect = Rect2(108, 31, 7, 9)
 script = ExtResource("4_d3o6j")
 prop_name = "trash"
 
 [node name="Trash4" type="Sprite2D" parent="Decor" unique_id=195544322]
 position = Vector2(288, 168)
+texture = ExtResource("4_xw3ee")
+centered = false
+offset = Vector2(-3, -9)
+region_enabled = true
+region_rect = Rect2(108, 31, 7, 9)
 script = ExtResource("4_d3o6j")
 prop_name = "trash"
 
 [node name="Trash5" type="Sprite2D" parent="Decor" unique_id=662490862]
 position = Vector2(334, 168)
+texture = ExtResource("4_xw3ee")
+centered = false
+offset = Vector2(-3, -9)
+region_enabled = true
+region_rect = Rect2(108, 31, 7, 9)
 script = ExtResource("4_d3o6j")
 prop_name = "trash"
 
 [node name="Plant3" type="Sprite2D" parent="Decor" unique_id=547140516]
 position = Vector2(379, 168)
+texture = ExtResource("4_xw3ee")
+centered = false
+offset = Vector2(-5, -15)
+region_enabled = true
+region_rect = Rect2(0, 31, 10, 15)
 script = ExtResource("4_d3o6j")
 prop_name = "plant"
 
 [node name="Lamp" type="Sprite2D" parent="Decor" unique_id=1813199972]
 position = Vector2(32, 15)
+texture = ExtResource("4_xw3ee")
+centered = false
+offset = Vector2(-8, -3)
+region_enabled = true
+region_rect = Rect2(47, 47, 16, 3)
 script = ExtResource("4_d3o6j")
 prop_name = "lamp"
 glow = 2.2
 
 [node name="LightCone" type="Node2D" parent="Decor" unique_id=550239613]
+material = SubResource("CanvasItemMaterial_2t17w")
 position = Vector2(32, 15)
 script = ExtResource("6_2t17w")
 length = 153.0
 
 [node name="Lamp2" type="Sprite2D" parent="Decor" unique_id=446557988]
 position = Vector2(96, 15)
+texture = ExtResource("4_xw3ee")
+centered = false
+offset = Vector2(-8, -3)
+region_enabled = true
+region_rect = Rect2(47, 47, 16, 3)
 script = ExtResource("4_d3o6j")
 prop_name = "lamp"
 glow = 2.2
 
 [node name="LightCone2" type="Node2D" parent="Decor" unique_id=1437206052]
+material = SubResource("CanvasItemMaterial_bm28l")
 position = Vector2(96, 15)
 script = ExtResource("6_2t17w")
 length = 129.0
 
 [node name="Lamp3" type="Sprite2D" parent="Decor" unique_id=164030615]
 position = Vector2(160, 15)
+texture = ExtResource("4_xw3ee")
+centered = false
+offset = Vector2(-8, -3)
+region_enabled = true
+region_rect = Rect2(47, 47, 16, 3)
 script = ExtResource("4_d3o6j")
 prop_name = "lamp"
 glow = 2.2
 
 [node name="LightCone3" type="Node2D" parent="Decor" unique_id=2120984423]
+material = SubResource("CanvasItemMaterial_2qse1")
 position = Vector2(160, 15)
 script = ExtResource("6_2t17w")
 length = 153.0
 
 [node name="Lamp4" type="Sprite2D" parent="Decor" unique_id=1042771075]
 position = Vector2(224, 15)
+texture = ExtResource("4_xw3ee")
+centered = false
+offset = Vector2(-8, -3)
+region_enabled = true
+region_rect = Rect2(47, 47, 16, 3)
 script = ExtResource("4_d3o6j")
 prop_name = "lamp"
 glow = 2.2
 
 [node name="LightCone4" type="Node2D" parent="Decor" unique_id=712564041]
+material = SubResource("CanvasItemMaterial_xt52j")
 position = Vector2(224, 15)
 script = ExtResource("6_2t17w")
 length = 153.0
 
 [node name="Lamp5" type="Sprite2D" parent="Decor" unique_id=1119316025]
 position = Vector2(288, 15)
+texture = ExtResource("4_xw3ee")
+centered = false
+offset = Vector2(-8, -3)
+region_enabled = true
+region_rect = Rect2(47, 47, 16, 3)
 script = ExtResource("4_d3o6j")
 prop_name = "lamp"
 glow = 2.2
 
 [node name="LightCone5" type="Node2D" parent="Decor" unique_id=1761303039]
+material = SubResource("CanvasItemMaterial_m68c3")
 position = Vector2(288, 15)
 script = ExtResource("6_2t17w")
 length = 153.0
 
 [node name="Lamp6" type="Sprite2D" parent="Decor" unique_id=2104831473]
 position = Vector2(352, 15)
+texture = ExtResource("4_xw3ee")
+centered = false
+offset = Vector2(-8, -3)
+region_enabled = true
+region_rect = Rect2(47, 47, 16, 3)
 script = ExtResource("4_d3o6j")
 prop_name = "lamp"
 glow = 2.2
 
 [node name="LightCone6" type="Node2D" parent="Decor" unique_id=1960358445]
+material = SubResource("CanvasItemMaterial_p6fww")
 position = Vector2(352, 15)
 script = ExtResource("6_2t17w")
 length = 153.0
 
 [node name="Lamp7" type="Sprite2D" parent="Decor" unique_id=1311850852]
 position = Vector2(416, 15)
+texture = ExtResource("4_xw3ee")
+centered = false
+offset = Vector2(-8, -3)
+region_enabled = true
+region_rect = Rect2(47, 47, 16, 3)
 script = ExtResource("4_d3o6j")
 prop_name = "lamp"
 glow = 2.2
 
 [node name="LightCone7" type="Node2D" parent="Decor" unique_id=487160516]
+material = SubResource("CanvasItemMaterial_6g61c")
 position = Vector2(416, 15)
 script = ExtResource("6_2t17w")
 length = 81.0
 
 [node name="Lamp8" type="Sprite2D" parent="Decor" unique_id=678067039]
 position = Vector2(480, 15)
+texture = ExtResource("4_xw3ee")
+centered = false
+offset = Vector2(-8, -3)
+region_enabled = true
+region_rect = Rect2(47, 47, 16, 3)
 script = ExtResource("4_d3o6j")
 prop_name = "lamp"
 glow = 2.2
 
 [node name="LightCone8" type="Node2D" parent="Decor" unique_id=1337598887]
+material = SubResource("CanvasItemMaterial_g2xra")
 position = Vector2(480, 15)
 script = ExtResource("6_2t17w")
 length = 81.0
 
 [node name="Lamp9" type="Sprite2D" parent="Decor" unique_id=108125396]
 position = Vector2(544, 15)
+texture = ExtResource("4_xw3ee")
+centered = false
+offset = Vector2(-8, -3)
+region_enabled = true
+region_rect = Rect2(47, 47, 16, 3)
 script = ExtResource("4_d3o6j")
 prop_name = "lamp"
 glow = 2.2
 
 [node name="LightCone9" type="Node2D" parent="Decor" unique_id=1740489278]
+material = SubResource("CanvasItemMaterial_bkw67")
 position = Vector2(544, 15)
 script = ExtResource("6_2t17w")
 length = 81.0
 
 [node name="Lamp10" type="Sprite2D" parent="Decor" unique_id=1545735683]
 position = Vector2(608, 15)
+texture = ExtResource("4_xw3ee")
+centered = false
+offset = Vector2(-8, -3)
+region_enabled = true
+region_rect = Rect2(47, 47, 16, 3)
 script = ExtResource("4_d3o6j")
 prop_name = "lamp"
 glow = 2.2
 
 [node name="LightCone10" type="Node2D" parent="Decor" unique_id=1232496477]
+material = SubResource("CanvasItemMaterial_40vlm")
 position = Vector2(608, 15)
 script = ExtResource("6_2t17w")
 length = 81.0
 
 [node name="NeonYe" type="Sprite2D" parent="Decor" unique_id=1763339242]
 position = Vector2(72, 102)
+texture = ExtResource("4_xw3ee")
+centered = false
+offset = Vector2(-6, -30)
+region_enabled = true
+region_rect = Rect2(0, 0, 12, 30)
 script = ExtResource("4_d3o6j")
 prop_name = "neon_ye"
 glow = 1.9
 flicker = 1
 
 [node name="Glow4" type="Node2D" parent="Decor" unique_id=1109259891]
+material = SubResource("CanvasItemMaterial_q27ur")
 position = Vector2(72, 84)
 script = ExtResource("5_pdl2l")
 color = Color(1, 0.30980393, 0.6039216, 1)
@@ -248,12 +431,18 @@ strength = 0.14
 
 [node name="NeonYe2" type="Sprite2D" parent="Decor" unique_id=2004970921]
 position = Vector2(304, 86)
+texture = ExtResource("4_xw3ee")
+centered = false
+offset = Vector2(-6, -30)
+region_enabled = true
+region_rect = Rect2(0, 0, 12, 30)
 script = ExtResource("4_d3o6j")
 prop_name = "neon_ye"
 glow = 1.9
 flicker = 1
 
 [node name="Glow5" type="Node2D" parent="Decor" unique_id=1190122582]
+material = SubResource("CanvasItemMaterial_685d6")
 position = Vector2(304, 68)
 script = ExtResource("5_pdl2l")
 color = Color(1, 0.30980393, 0.6039216, 1)
@@ -261,11 +450,17 @@ strength = 0.14
 
 [node name="SignExit" type="Sprite2D" parent="Decor" unique_id=1412598604]
 position = Vector2(606, 60)
+texture = ExtResource("4_xw3ee")
+centered = false
+offset = Vector2(-20, -11)
+region_enabled = true
+region_rect = Rect2(58, 31, 40, 11)
 script = ExtResource("4_d3o6j")
 prop_name = "sign_exit"
 glow = 1.6
 
 [node name="Glow6" type="Node2D" parent="Decor" unique_id=1593055335]
+material = SubResource("CanvasItemMaterial_6044w")
 position = Vector2(606, 55)
 script = ExtResource("5_pdl2l")
 radius = 18.0
@@ -320,3 +515,5 @@ position = Vector2(28, 163)
 
 [node name="DebugOverlay" type="Node" parent="." unique_id=1745182913]
 script = ExtResource("13_dbg0")
+initial_weapon = 1
+show_panel = false

@@ -1,13 +1,11 @@
-[gd_resource type="TileSet" format=3]
+[gd_resource type="TileSet" format=3 uid="uid://br4obv8flnbqg"]
 
-[ext_resource type="Texture2D" path="res://assets/tiles/street_tiles.png" id="1_8ipd2"]
+[ext_resource type="Texture2D" uid="uid://b3m7nq7qca2qm" path="res://assets/tiles/street_tiles.png" id="1_8ipd2"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_1m5o7"]
 texture = ExtResource("1_8ipd2")
 texture_region_size = Vector2i(8, 8)
 0:0/0 = 0
-0:0/0/terrain_set = 0
-0:0/0/terrain = 0
 0:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-4, -4, 4, -4, 4, 4, -4, 4)
 1:0/0 = 0
 1:0/0/terrain_set = 0
@@ -57,13 +55,7 @@ texture_region_size = Vector2i(8, 8)
 0:1/0/terrains_peering_bit/bottom_side = 0
 0:1/0/terrains_peering_bit/top_side = 0
 1:1/0 = 0
-1:1/0/terrain_set = 0
-1:1/0/terrain = 0
 1:1/0/physics_layer_0/polygon_0/points = PackedVector2Array(-4, -4, 4, -4, 4, 4, -4, 4)
-1:1/0/terrains_peering_bit/right_side = 0
-1:1/0/terrains_peering_bit/bottom_side = 0
-1:1/0/terrains_peering_bit/top_side = 0
-1:1/0/terrains_peering_bit/top_right_corner = 0
 2:1/0 = 0
 2:1/0/terrain_set = 0
 2:1/0/terrain = 0
