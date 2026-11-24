@@ -70,6 +70,9 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	if dead:
 		return
+	# 回旋镖收回期间冻结玩家（瞄准冻结由下面的 _freeze_left 分支处理）
+	if Game.frozen and _freeze_left <= 0:
+		return
 	if Input.is_action_just_pressed("jump"):
 		_jump_buffer_timer = jump_buffer_time
 
@@ -351,6 +354,7 @@ func _throw_boomerang(type: int, dir: Vector2, def: Dictionary) -> void:
 	b.setup(self, type, dir, def)
 	get_parent().add_child(b)
 	b.global_position = global_position
+	b.begin()
 	active_boomerang = b
 	if def.has("recoil_add"):
 		velocity += -dir * def["recoil_add"]
@@ -362,6 +366,7 @@ func _throw_boomerang(type: int, dir: Vector2, def: Dictionary) -> void:
 func on_boomerang_caught(b: Boomerang, move_dir: Vector2) -> void:
 	if b == active_boomerang:
 		active_boomerang = null
+	Game.frozen = false         # 解除收回冻结
 	var def := WeaponDefs.get_def(b.type)
 	if def["catch_speed"] > 0.0 and move_dir != Vector2.ZERO:
 		apply_dash(move_dir * def["catch_speed"], def["catch_dash_time"], 1.0)

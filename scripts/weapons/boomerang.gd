@@ -1,24 +1,40 @@
 class_name Boomerang
 extends Node2D
 ## 回旋镖弹体（轻型 / 重型共用）。
-## OUT：沿发射方向飞行 out_tiles 格，撞墙提前停下 → IDLE：静止悬停
-## RETURN：玩家再按方向键后高速飞回玩家（穿墙），归位时通知玩家。
+## OUT：用 lerp 缓动快速飞到目标点（撞墙则停在墙面）→ IDLE：静止悬停
+## RETURN：冻结全场 → 短暂停顿 → 逐渐加速飞回玩家（穿墙），归位时解冻并通知玩家。
 ## 全程有攻击判定（含扫掠检测，防止高速穿过敌人）。
 
 enum State { OUT, IDLE, RETURN }
 
 const RADIUS := 3.0
 
+# ============ 动画手感（不导出，想调就改这里） ============
+## 飞出耗时（秒）。飞行距离由 WeaponDefs 的 out_tiles 决定
+const OUT_TIME_NORMAL := 0.16
+const OUT_TIME_HEAVY := 0.20
+## 飞出缓动指数：1 = 匀速；越大越「起步冲、末段缓」
+const OUT_EASE_POWER := 3.0
+## 收回：冻结后停顿（秒）→ 逐渐加速。数值越大收回越快
+const RETURN_DELAY := 0.05
+const RETURN_ACCEL := 3500.0
+const RETURN_MAX_SPEED := 1300.0
+# =======================================================
+
 var type := WeaponDefs.Type.BOOMERANG
 var state := State.OUT
 var _player: Player
 var _dir := Vector2.RIGHT
 var _out_dist := 24.0
-var _out_speed := 260.0
-var _return_speed := 420.0
-var _traveled := 0.0
+var _out_time := OUT_TIME_NORMAL
 var _color := Color.WHITE
 var _spin := 0.0
+
+var _start_pos := Vector2.ZERO
+var _target_pos := Vector2.ZERO
+var _out_elapsed := 0.0
+var _return_delay_left := 0.0
+var _return_speed := 0.0
 
 
 func setup(player: Player, t: int, dir: Vector2, def: Dictionary) -> void:
@@ -26,20 +42,37 @@ func setup(player: Player, t: int, dir: Vector2, def: Dictionary) -> void:
 	type = t
 	_dir = dir
 	_out_dist = def["out_tiles"] * Game.TILE
-	_out_speed = def["out_speed"]
-	_return_speed = def["return_speed"]
+	_out_time = OUT_TIME_HEAVY if t == WeaponDefs.Type.HEAVY_BOOMERANG else OUT_TIME_NORMAL
 	_color = def["color"]
 
 
+## 由 Player 摆好 global_position 后调用：确定起点与终点（撞墙则提前截断）。
+func begin() -> void:
+	_start_pos = global_position
+	var far := _start_pos + _dir * (_out_dist + RADIUS)
+	var q := PhysicsRayQueryParameters2D.create(_start_pos, far, Game.LAYER_WORLD)
+	var r := get_world_2d().direct_space_state.intersect_ray(q)
+	var dist := _out_dist
+	if not r.is_empty():
+		dist = maxf((r.position - _start_pos).length() - RADIUS, 0.0)   # 贴墙时不越过玩家
+	_target_pos = _start_pos + _dir * dist
+	_out_elapsed = 0.0
+
+
 func recall() -> void:
+	if state == State.RETURN:
+		return
 	state = State.RETURN
+	_return_delay_left = RETURN_DELAY
+	_return_speed = 0.0
+	Game.frozen = true          # 收回期间冻结其他所有内容
 
 
 func _physics_process(delta: float) -> void:
-	if Game.frozen:
-		return
 	if not is_instance_valid(_player) or _player.dead:
 		queue_free()
+		return
+	if Game.frozen and state != State.RETURN:
 		return
 	var old := global_position
 	match state:
@@ -52,23 +85,23 @@ func _physics_process(delta: float) -> void:
 	_spin += delta * (30.0 if state != State.IDLE else 12.0)
 	queue_redraw()
 
+
+## 用 lerp 从起点缓动到终点；t 走 ease-out 曲线，前段快、末段平滑落位
 func _step_out(delta: float) -> void:
-	var step := minf(_out_speed * delta, _out_dist - _traveled)
-	var from := global_position
-	var q := PhysicsRayQueryParameters2D.create(from, from + _dir * (step + RADIUS), Game.LAYER_WORLD)
-	var r := get_world_2d().direct_space_state.intersect_ray(q)
-	if not r.is_empty():
-		global_position = r.position - _dir * RADIUS
-		state = State.IDLE
-		return
-	global_position = from + _dir * step
-	_traveled += step
-	if _traveled >= _out_dist - 0.01:
+	_out_elapsed += delta
+	var t := clampf(_out_elapsed / _out_time, 0.0, 1.0)
+	var k := 1.0 - pow(1.0 - t, OUT_EASE_POWER)
+	global_position = _start_pos.lerp(_target_pos, k)
+	if t >= 1.0:
 		state = State.IDLE
 
 
 ## 返回 true 表示已归位并销毁
 func _step_return(delta: float) -> bool:
+	if _return_delay_left > 0.0:
+		_return_delay_left -= delta
+		return false
+	_return_speed = minf(_return_speed + RETURN_ACCEL * delta, RETURN_MAX_SPEED)
 	var to_player := _player.global_position - global_position
 	var step := _return_speed * delta
 	if to_player.length() <= step:
