@@ -426,12 +426,13 @@ func _fire(dir: Vector2) -> void:
 
 ## 瞬时射线（带宽容判定）。
 ## 命中判定不是一条线，而是一个矩形：沿瞄准方向长 max_range、垂直方向宽
-## assist_tiles 图格（见 WeaponDefs）。中心线先按原逻辑判定；只有中心线真的打中敌人
+## band_tiles 图格（正十字 / 斜向由 _assist_band() 选，见 WeaponDefs）。
+## 中心线先按原逻辑判定；只有中心线真的打中敌人
 ## 才直接返回 —— 撞墙不算，否则关卡里几乎每枪尽头都是墙，宽容判定永远轮不到。
 ## 中心线没碰到敌人时，在矩形里挑最贴近瞄准线、且和玩家之间没有墙的敌人，
 ## 把弹道以玩家为轴心偏折过去 —— 偏折后再射一次，保证另一端真的落在敌人身上。
 ## 返回 {"dir": 实际弹道方向, "end": 终点, "enemy": Guard 或 null, "hit": 是否命中}
-func _hitscan(dir: Vector2, max_range: float, assist_tiles: float) -> Dictionary:
+func _hitscan(dir: Vector2, max_range: float, band_tiles: float) -> Dictionary:
 	var from := global_position
 	var r := _ray(from, from + dir * max_range, Game.LAYER_WORLD | Game.LAYER_ENEMY)
 	var direct: Guard = null
@@ -440,7 +441,7 @@ func _hitscan(dir: Vector2, max_range: float, assist_tiles: float) -> Dictionary
 	if direct != null:
 		return {"dir": dir, "end": r.position, "enemy": direct, "hit": true}
 	# 中心线没打中敌人（可能先撞到墙）：墙不参与宽容判定，只用来兜底落点
-	var target := _assist_target(dir, max_range, assist_tiles)
+	var target := _assist_target(dir, max_range, band_tiles)
 	if target != null:
 		# 偏折方向 = 玩家 → 敌人中心；起点仍是玩家中心，所以只是绕玩家转了一个小角度
 		var shot := (target.global_position - from).normalized()
@@ -454,10 +455,19 @@ func _hitscan(dir: Vector2, max_range: float, assist_tiles: float) -> Dictionary
 	return {"dir": dir, "end": end, "enemy": null, "hit": not r.is_empty()}
 
 
+## 宽容判定带宽（图格）。斜向（两轴都有分量）用 assist_tiles_diagonal，
+## 正十字用 assist_tiles；斜向没配就退回 assist_tiles。
+func _assist_band(dir: Vector2, def: Dictionary) -> float:
+	if absf(dir.x) > 0.01 and absf(dir.y) > 0.01:
+		var wide: float = def.get("assist_tiles_diagonal", def["assist_tiles"])
+		return wide
+	return def["assist_tiles"]
+
+
 ## 在宽容矩形里挑目标：横向偏移最小的敌人优先（更贴近玩家瞄的方向），
 ## 偏移相同则取更近的。和玩家之间隔着墙的敌人不算 —— 不能隔墙打。
-func _assist_target(dir: Vector2, max_range: float, assist_tiles: float) -> Guard:
-	var half := assist_tiles * Game.TILE * 0.5
+func _assist_target(dir: Vector2, max_range: float, band_tiles: float) -> Guard:
+	var half := band_tiles * Game.TILE * 0.5
 	if half <= 0.0:
 		return null
 	var band := RectangleShape2D.new()
@@ -501,7 +511,7 @@ func _ray(a: Vector2, b: Vector2, mask: int) -> Dictionary:
 
 
 func _fire_dart(dir: Vector2, def: Dictionary) -> void:
-	var res := _hitscan(dir, def["range"], def["assist_tiles"])
+	var res := _hitscan(dir, def["range"], _assist_band(dir, def))
 	Fx.trace(get_parent(), global_position, res["end"], def["color"])
 	if not is_on_floor():
 		_dart_air_used += 1
@@ -528,7 +538,7 @@ func _fire_dart(dir: Vector2, def: Dictionary) -> void:
 
 
 func _fire_air_gun(dir: Vector2, def: Dictionary) -> void:
-	var res := _hitscan(dir, def["range"], def["assist_tiles"])
+	var res := _hitscan(dir, def["range"], _assist_band(dir, def))
 	Fx.trace(get_parent(), global_position, res["end"], def["color"])
 	var enemy: Guard = res["enemy"]
 	if enemy:
