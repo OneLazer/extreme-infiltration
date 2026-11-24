@@ -431,7 +431,8 @@ func _fire(dir: Vector2) -> void:
 ## 才直接返回 —— 撞墙不算，否则关卡里几乎每枪尽头都是墙，宽容判定永远轮不到。
 ## 中心线没碰到敌人时，在矩形里挑最贴近瞄准线、且和玩家之间没有墙的敌人，
 ## 把弹道以玩家为轴心偏折过去 —— 偏折后再射一次，保证另一端真的落在敌人身上。
-## 返回 {"dir": 实际弹道方向, "end": 终点, "enemy": Guard 或 null, "hit": 是否命中}
+## 返回 {"dir": 实际弹道方向, "end": 终点, "enemy": Guard 或 null,
+##       "hit": 是否命中, "normal": 命中面的法线（敌人 / 墙），没碰到则 ZERO}
 func _hitscan(dir: Vector2, max_range: float, band_tiles: float) -> Dictionary:
 	var from := global_position
 	var r := _ray(from, from + dir * max_range, Game.LAYER_WORLD | Game.LAYER_ENEMY)
@@ -439,7 +440,7 @@ func _hitscan(dir: Vector2, max_range: float, band_tiles: float) -> Dictionary:
 	if not r.is_empty():
 		direct = r.collider as Guard
 	if direct != null:
-		return {"dir": dir, "end": r.position, "enemy": direct, "hit": true}
+		return {"dir": dir, "end": r.position, "enemy": direct, "hit": true, "normal": r.normal}
 	# 中心线没打中敌人（可能先撞到墙）：墙不参与宽容判定，只用来兜底落点
 	var target := _assist_target(dir, max_range, band_tiles)
 	if target != null:
@@ -447,12 +448,14 @@ func _hitscan(dir: Vector2, max_range: float, band_tiles: float) -> Dictionary:
 		var shot := (target.global_position - from).normalized()
 		var reach := _ray(from, from + shot * max_range, Game.LAYER_ENEMY)
 		if not reach.is_empty():
-			return {"dir": shot, "end": reach.position, "enemy": reach.collider as Guard, "hit": true}
+			return {"dir": shot, "end": reach.position, "enemy": reach.collider as Guard, "hit": true, "normal": reach.normal}
 	# 没目标（或目标在查询后消失）：退回中心线结果（墙 / 射程尽头）
 	var end := from + dir * max_range
+	var normal := Vector2.ZERO
 	if not r.is_empty():
 		end = r.position
-	return {"dir": dir, "end": end, "enemy": null, "hit": not r.is_empty()}
+		normal = r.normal
+	return {"dir": dir, "end": end, "enemy": null, "hit": not r.is_empty(), "normal": normal}
 
 
 ## 宽容判定带宽（图格）。斜向（两轴都有分量）用 assist_tiles_diagonal，
@@ -533,8 +536,22 @@ func _fire_dart(dir: Vector2, def: Dictionary) -> void:
 	global_position += motion * frac[0]
 	if not def["keep_velocity"]:
 		velocity = Vector2.ZERO
+	if enemy == null:
+		_apply_dart_impact(res["normal"], def)
 	_dash_timer = 0.0
 	_var_jump_timer = 0.0
+
+
+## 飞镖撞墙的收尾手感（打到敌人不触发）：
+##   竖直墙 → 沿墙面法线反推一个很小的 X 速度，并给一点向上的 Y
+##   地板   → 只给一点向上的 Y
+##   天花板 → 不变
+## 数值见 WeaponDefs.Type.DART 的 bounce_* 参数
+func _apply_dart_impact(normal: Vector2, def: Dictionary) -> void:
+	if absf(normal.x) > absf(normal.y):
+		velocity = Vector2(normal.x * def["bounce_wall_x"], -def["bounce_wall_up"])
+	elif normal.y < 0.0:
+		velocity.y = -def["bounce_floor_up"]
 
 
 func _fire_air_gun(dir: Vector2, def: Dictionary) -> void:
@@ -548,12 +565,19 @@ func _fire_air_gun(dir: Vector2, def: Dictionary) -> void:
 	apply_dash(-dir * def["recoil_dash"], def["dash_time"], def["end_mult"])
 
 func _throw_boomerang(type: int, dir: Vector2, def: Dictionary) -> void:
+	# 宽容判定：在投掷距离内、宽容带宽里挑最贴近瞄准线的敌人，把投掷方向偏折过去
+	var out_range: float = def["out_tiles"] * Game.TILE
+	var target := _assist_target(dir, out_range, _assist_band(dir, def))
+	var throw_dir := dir
+	if target != null:
+		throw_dir = (target.global_position - global_position).normalized()
 	var b := Boomerang.new()
-	b.setup(self, type, dir, def)
+	b.setup(self, type, throw_dir, def)
 	get_parent().add_child(b)
 	b.global_position = global_position
 	b.begin()
 	active_boomerang = b
+	# 反冲仍按按键方向 dir，不跟偏折后的投掷方向
 	if def.has("recoil_add"):
 		velocity += -dir * def["recoil_add"]
 	if def.has("recoil_dash"):
