@@ -533,9 +533,9 @@ func _fire_air_gun(dir: Vector2, def: Dictionary) -> void:
 	var enemy: Guard = res["enemy"]
 	if enemy:
 		enemy.kill()
-	# 反冲跟着实际弹道走：宽容判定偏折后依然是「子弹的反方向」
-	var shot: Vector2 = res["dir"]
-	apply_dash(-shot * def["recoil_dash"], def["dash_time"], def["end_mult"])
+	# 反冲固定用按键方向，不跟偏折后的弹道：宽容判定只放宽命中，
+	# 不能带偏 super / hyper / 蹭墙跳这些依赖冲刺方向的位移手感。
+	apply_dash(-dir * def["recoil_dash"], def["dash_time"], def["end_mult"])
 
 func _throw_boomerang(type: int, dir: Vector2, def: Dictionary) -> void:
 	var b := Boomerang.new()
