@@ -1,6 +1,7 @@
 class_name Player
 extends CharacterBody2D
 ## 玩家：移动移植自 Celeste Player.cs 的 NormalUpdate（跑、跳、墙滑、蹬墙跳），
+## 武器反冲的冲刺可被跳跃打断：super / hyper / 蹭墙跳。
 ## 武器部分见下半段。原点在碰撞盒中心，碰撞盒 6x10。
 
 signal died
@@ -25,6 +26,13 @@ signal weapons_changed
 @export var wall_slide_start_max := 20.0
 @export var wall_slide_time := 1.2
 @export var upward_corner_correction := 4
+
+# ---------------- 冲刺跳（武器反冲期间按跳打断） ----------------
+@export_group("冲刺跳")
+@export var super_boost := 1.10          ## super：水平冲刺接跳，水平动量加成
+@export var hyper_boost := 1.40          ## hyper：下斜冲刺接跳，水平动量加成更大
+@export var wall_bounce_v := -170.0      ## 蹭墙跳垂直初速
+@export var wall_bounce_h := 160.0       ## 蹭墙跳离开墙面的水平速度
 
 # ---------------- 武器参数 ----------------
 @export_group("武器")
@@ -132,13 +140,14 @@ func _update_movement(delta: float) -> void:
 		_move_x = _force_move_x
 
 	if _dash_timer > 0.0:
-		# 武器反冲锁定中：忽略重力与输入
-		velocity = _dash_velocity
-		_dash_timer -= delta
-		if _dash_timer <= 0.0:
-			velocity *= _dash_end_mult
-			if velocity.y < 0.0:
-				velocity.y *= 0.75
+		if not _try_dash_jump():
+			# 武器反冲锁定中：忽略重力与输入
+			velocity = _dash_velocity
+			_dash_timer -= delta
+			if _dash_timer <= 0.0:
+				velocity *= _dash_end_mult
+				if velocity.y < 0.0:
+					velocity.y *= 0.75
 	else:
 		if _move_x != 0:
 			facing = _move_x
@@ -205,6 +214,69 @@ func _wall_jump(dir: int) -> void:
 	velocity.y = jump_speed
 	_var_jump_speed = velocity.y
 	facing = dir
+
+
+## 冲刺中按跳：朝墙冲 → 蹭墙跳，否则按冲刺方向区分 super / hyper。
+## 返回 true 表示冲刺已被跳跃打断。
+func _try_dash_jump() -> bool:
+	if _jump_buffer_timer <= 0.0:
+		return false
+	# 蹭墙跳：冲刺方向正朝着墙（不要求在地面，空中贴墙也能弹）
+	if _dash_velocity.x > 0.1 and _wall_check(1, wall_jump_check_dist):
+		_dash_wall_bounce(1)
+		return true
+	if _dash_velocity.x < -0.1 and _wall_check(-1, wall_jump_check_dist):
+		_dash_wall_bounce(-1)
+		return true
+	# super / hyper 需要地面或土狼时间
+	if _jump_grace_timer <= 0.0:
+		return false
+	if absf(_dash_velocity.y) < 1.0:
+		_dash_super_jump()
+		return true
+	if _dash_velocity.y > 1.0 and absf(_dash_velocity.x) > 1.0:
+		_dash_hyper_jump()
+		return true
+	return false
+
+
+## super：水平冲刺接跳，保留冲刺水平动量并小幅加成
+func _dash_super_jump() -> void:
+	_break_dash()
+	velocity.x = _dash_velocity.x * super_boost
+	velocity.y = jump_speed
+	_var_jump_timer = var_jump_time
+	_var_jump_speed = velocity.y
+
+
+## hyper：下斜冲刺接跳，水平加成更大
+func _dash_hyper_jump() -> void:
+	_break_dash()
+	velocity.x = _dash_velocity.x * hyper_boost
+	velocity.y = jump_speed
+	_var_jump_timer = var_jump_time
+	_var_jump_speed = velocity.y
+
+
+## 蹭墙跳：向上弹起并向墙的反方向弹开（wall_dir = 墙所在的一侧）
+func _dash_wall_bounce(wall_dir: int) -> void:
+	_break_dash()
+	if _move_x != 0:
+		_force_move_x = -wall_dir
+		_force_move_x_timer = wall_jump_force_time
+	velocity.x = -wall_dir * wall_bounce_h
+	velocity.y = wall_bounce_v
+	_var_jump_timer = var_jump_time
+	_var_jump_speed = velocity.y
+	facing = -wall_dir
+
+
+## 打断冲刺锁速，把控制权交还给普通移动
+func _break_dash() -> void:
+	_dash_timer = 0.0
+	_jump_buffer_timer = 0.0
+	_jump_grace_timer = 0.0
+	_wall_slide_timer = wall_slide_time
 
 
 func _wall_check(dir: int, dist: float) -> bool:
