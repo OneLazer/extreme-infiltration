@@ -7,6 +7,13 @@ extends CharacterBody2D
 
 signal died
 signal weapons_changed
+## 以下信号只给表现层（PlayerVisual / 特效）用，不影响玩法
+enum JumpKind { GROUND, AIR, WALL, SUPER, HYPER, BOUNCE }
+signal jumped(kind: int, dir: int)
+signal landed(fall_speed: float)
+signal shot(type: int, from: Vector2, dir: Vector2, res: Dictionary)
+signal thrown(type: int, dir: Vector2)
+signal teleported(from: Vector2, to: Vector2)
 
 ## 相机震屏组件（用 preload 显式引用，避免依赖 class_name 的全局类缓存）
 const ScreenShakeScript := preload("res://scripts/screen_shake.gd")
@@ -170,7 +177,10 @@ func _update_movement(delta: float) -> void:
 		_normal_update(delta, on_ground)
 
 	_upward_corner_correction(delta)
+	var fall_speed := velocity.y
 	move_and_slide()
+	if not on_ground and is_on_floor():
+		landed.emit(fall_speed)
 
 func _normal_update(delta: float, on_ground: bool) -> void:
 	# 跑动与摩擦
@@ -219,6 +229,7 @@ func _jump() -> void:
 	velocity.x += jump_h_boost * _move_x
 	velocity.y = jump_speed
 	_var_jump_speed = velocity.y
+	jumped.emit(JumpKind.GROUND, _move_x)
 
 
 ## 二段跳。土狼时间内的跳会走 _jump()，不会到这条分支，所以不消耗次数。
@@ -230,7 +241,7 @@ func _air_jump() -> void:
 	_wall_slide_timer = wall_slide_time
 	# 不覆盖更快的上升速度：蹬墙跳 / 反冲后立刻接跳时不会被拽慢
 	velocity.y = minf(velocity.y, air_jump_speed)
-	Fx.burst(get_parent(), global_position + Vector2(0.0, 5.0), Palette.PLAYER, 5)
+	jumped.emit(JumpKind.AIR, _move_x)
 
 
 func _can_air_jump() -> bool:
@@ -255,6 +266,7 @@ func _wall_jump(dir: int) -> void:
 	velocity.y = jump_speed
 	_var_jump_speed = velocity.y
 	facing = dir
+	jumped.emit(JumpKind.WALL, dir)
 
 
 ## 冲刺中按跳：贴墙 → 蹭墙跳，否则按冲刺方向区分 super / hyper；
@@ -303,6 +315,7 @@ func _dash_super_jump() -> void:
 	velocity.y = jump_speed
 	_var_jump_timer = var_jump_time
 	_var_jump_speed = velocity.y
+	jumped.emit(JumpKind.SUPER, int(signf(velocity.x)))
 
 
 ## hyper：下斜冲刺接跳，水平速度固定为 hyper_speed
@@ -312,6 +325,7 @@ func _dash_hyper_jump() -> void:
 	velocity.y = jump_speed
 	_var_jump_timer = var_jump_time
 	_var_jump_speed = velocity.y
+	jumped.emit(JumpKind.HYPER, int(signf(velocity.x)))
 
 
 ## 蹭墙跳：向上弹起并向墙的反方向弹开（wall_dir = 墙所在的一侧）
@@ -325,6 +339,7 @@ func _dash_wall_bounce(wall_dir: int) -> void:
 	_var_jump_timer = var_jump_time
 	_var_jump_speed = velocity.y
 	facing = -wall_dir
+	jumped.emit(JumpKind.BOUNCE, -wall_dir)
 
 
 ## 打断冲刺锁速，把控制权交还给普通移动
@@ -536,7 +551,8 @@ func _ray(a: Vector2, b: Vector2, mask: int) -> Dictionary:
 
 func _fire_dart(dir: Vector2, def: Dictionary) -> void:
 	var res := _hitscan(dir, def["range"], _assist_tiles(def))
-	Fx.trace(get_parent(), global_position, res["end"], def["color"])
+	shot.emit(WeaponDefs.Type.DART, global_position, dir, res)
+	var from := global_position
 	if not is_on_floor():
 		_dart_air_used += 1
 	if not res["hit"]:
@@ -546,8 +562,7 @@ func _fire_dart(dir: Vector2, def: Dictionary) -> void:
 	# 撞墙：仍用碰撞盒扫掠，落点贴着墙面，不会嵌进墙里。
 	var enemy: Guard = res["enemy"]
 	if enemy:
-		enemy.kill()
-	Fx.burst(get_parent(), global_position, Palette.PLAYER, 4)
+		enemy.kill(res["dir"])
 	if enemy != null:
 		global_position = res["end"]
 	else:
@@ -573,6 +588,7 @@ func _fire_dart(dir: Vector2, def: Dictionary) -> void:
 		_apply_dart_impact(fake_normal, def)
 	_dash_timer = 0.0
 	_var_jump_timer = 0.0
+	teleported.emit(from, global_position)
 
 
 ## 飞镖收尾速度（撞墙与命中敌人共用，敌人用一个等价法线喂进来）：
@@ -589,10 +605,10 @@ func _apply_dart_impact(normal: Vector2, def: Dictionary) -> void:
 
 func _fire_air_gun(dir: Vector2, def: Dictionary) -> void:
 	var res := _hitscan(dir, def["range"], _assist_tiles(def))
-	Fx.trace(get_parent(), global_position, res["end"], def["color"])
+	shot.emit(WeaponDefs.Type.AIR_GUN, global_position, dir, res)
 	var enemy: Guard = res["enemy"]
 	if enemy:
-		enemy.kill()
+		enemy.kill(res["dir"])
 	# 反冲方向单独做 8 方向吸附（见 _recoil_dir），不跟偏折后的弹道：
 	# 宽容判定只放宽命中，不能带偏 super / hyper / 蹭墙跳这些依赖冲刺方向的位移手感。
 	apply_dash(-_recoil_dir(dir) * def["recoil_dash"], def["dash_time"], def["end_mult"])
@@ -610,6 +626,7 @@ func _throw_boomerang(type: int, dir: Vector2, def: Dictionary) -> void:
 	b.global_position = global_position
 	b.begin()
 	active_boomerang = b
+	thrown.emit(type, throw_dir)
 	# 反冲仍按 8 方向吸附后的方向，不跟偏折后的投掷方向
 	var rd := _recoil_dir(dir)
 	if def.has("recoil_add"):
@@ -636,33 +653,28 @@ func die() -> void:
 	dead = true
 	Game.frozen = false
 	velocity = Vector2.ZERO
-	Fx.burst(get_parent(), global_position, Palette.PLAYER, 14)
 	hide()
 	died.emit()
 
 
 func _draw() -> void:
-	draw_rect(Rect2(-3, -5, 6, 10), Palette.PLAYER)
-	# 眼睛朝瞄准方向偏，跟着鼠标看
-	draw_rect(Rect2(-1 + _aim_dir.x * 1.5, -3 + _aim_dir.y * 1.5, 2, 2), Color(0.05, 0.02, 0.1))
-	# 头顶小方块：当前武器颜色
-	var wdef := WeaponDefs.get_def(current_weapon())
-	draw_rect(Rect2(-1.5, -9, 3, 2), wdef["color"])
-	_draw_aim_guide(wdef)
+	# 身体、围巾、武器由子节点 PlayerVisual 绘制；这里只画瞄准反馈
+	_draw_aim_guide(WeaponDefs.get_def(current_weapon()))
 
 
-## 鼠标瞄准的视觉反馈：玩家 → 光标的淡色瞄准线（撞墙处截断，冻结时加亮）+ 光标处准星。
+## 鼠标瞄准的视觉反馈：玩家 → 光标的虚线（撞墙处截断，冻结时加亮）+ 光标处准星。
 ## 准星画在玩家节点里，所以和其他实体同一层，但玩家节点在关卡里排在实体之后，正常盖在上面。
 func _draw_aim_guide(wdef: Dictionary) -> void:
+	if dead:
+		return
 	var col: Color = wdef["color"]
-	var start := _aim_dir * 5.0
-	if _aim_len > 5.0:
-		var line_c := col
-		line_c.a = 0.55 if _freeze_left > 0 else 0.18
-		draw_line(start, _aim_dir * _aim_len, line_c, 1.0)
-	var mouse := to_local(get_global_mouse_position())
-	var cross := col
-	cross.a = 0.9
-	for d in [Vector2.LEFT, Vector2.RIGHT, Vector2.UP, Vector2.DOWN]:
-		draw_line(mouse + d * 2.0, mouse + d * 4.0, cross, 1.0)
-	draw_rect(Rect2(mouse - Vector2(0.5, 0.5), Vector2.ONE), cross)
+	var dim := Color(col.r * 0.45, col.g * 0.45, col.b * 0.45, 0.55 if _freeze_left > 0 else 0.35)
+	var d := 8.0
+	while d < _aim_len:
+		draw_rect(Rect2((_aim_dir * d).round(), Vector2.ONE), dim)
+		d += 3.0
+	var m := to_local(get_global_mouse_position()).round()
+	for v in [Vector2.LEFT, Vector2.RIGHT, Vector2.UP, Vector2.DOWN]:
+		draw_rect(Rect2(m + v * 2.0, Vector2.ONE), col)
+		draw_rect(Rect2(m + v * 3.0, Vector2.ONE), col)
+	draw_rect(Rect2(m, Vector2.ONE), Color(col, 0.6))

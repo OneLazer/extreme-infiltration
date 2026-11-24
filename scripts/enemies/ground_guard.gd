@@ -62,7 +62,10 @@ func _physics_process(delta: float) -> void:
 			_alert_left = -1.0
 			_locked = false
 			_shot_flash = 0.2
-			Fx.trace(get_parent(), global_position + EYE, p.global_position, Palette.ALERT)
+			var muzzle := global_position + Vector2(facing * 7.0, -1.0)
+			Juice.flash(muzzle, "muzzle_airgun", (p.global_position - muzzle).angle(), Color(1.7, 1.7, 1.7))
+			Juice.trace(muzzle, p.global_position, Palette.ALERT, 2.0, 0.2)
+			Juice.sparks(p.global_position, 8, (p.global_position - muzzle), 0.6, 160.0, Palette.ALERT)
 			p.die()
 	else:
 		_alert_left = -1.0
@@ -129,20 +132,56 @@ func _has_los(p: Player) -> bool:
 	return get_world_2d().direct_space_state.intersect_ray(q).is_empty()
 
 
+## 身体精灵：idle 4 帧呼吸，锁定时换成举枪 + 红色面罩
+const SHEET := preload("res://assets/chars/guard.png")
+const SIL := preload("res://assets/chars/guard_sil.png")
+const FRAME_OFFSET := Vector2(-8, -10)   # 16×16 帧，脚底对齐碰撞盒底边（+6）
+
+
+func _frame() -> int:
+	return 4 if (_locked or _shot_flash > 0.0) else int(_t * 3.0) % 4
+
+
+func _process(delta: float) -> void:
+	_t += delta
+	queue_redraw()
+
+
 func _draw() -> void:
-	# 视野扇形（被墙体裁切，_physics_process 中计算）
-	if _cone.size() >= 3:
-		draw_colored_polygon(_cone, Palette.VISION_ALERT if _locked else Palette.VISION)
-	# 锁定时的瞄准线
-	if _locked and _focus > 0.02:
-		var sight := Palette.ALERT
-		sight.a = 0.4 * _focus
-		draw_line(EYE, _aim_end, sight, 1.0)
-	# 身体
-	var body_c := Palette.ALERT if (_locked or _shot_flash > 0.0) else Palette.GUARD
-	draw_rect(Rect2(-4, -6, 8, 12), body_c)
-	draw_rect(Rect2(facing * 1.5 - 1, -4, 2, 2), Color(0.05, 0.02, 0.1))
-	# 倒计时
+	var f := _frame()
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2(facing, 1))
+	draw_texture_rect_region(SHEET, Rect2(FRAME_OFFSET, Vector2(16, 16)), Rect2(f * 16, 0, 16, 16))
+	# 面罩发光层：同一帧的面罩像素再画一遍（HDR），让它进辉光
+	var visor := Palette.ALERT if (_locked or _shot_flash > 0.0) else Palette.GUARD
+	draw_rect(Rect2(FRAME_OFFSET + Vector2(6, 5), Vector2(5, 1)), visor * Color(0.75, 0.75, 0.75))
+	draw_set_transform(Vector2.ZERO)
+	# 锁定提示：头顶红色「!」+ 开枪倒计时条
 	if _locked:
-		var txt := "%.1f" % maxf(_alert_left, 0.0)
-		draw_string(ThemeDB.fallback_font, Vector2(-12, -9), txt, HORIZONTAL_ALIGNMENT_CENTER, 24, 8, Palette.ALERT)
+		var k := clampf(_alert_left / alert_time, 0.0, 1.0)
+		var blink := 1.0 if fmod(_t, 0.2) < 0.13 or k > 0.5 else 0.4
+		var c := Palette.ALERT * Color(blink, blink, blink)
+		draw_rect(Rect2(-1, -17, 2, 4), c)
+		draw_rect(Rect2(-1, -12, 2, 1), c)
+		draw_rect(Rect2(-5, -9, 10, 1), Color(0.2, 0.05, 0.08))
+		draw_rect(Rect2(-5, -9, roundf(10.0 * k), 1), c)
+
+
+func _silhouette() -> Dictionary:
+	return {"tex": SIL, "region": Rect2(_frame() * 16, 0, 16, 16), "offset": FRAME_OFFSET, "flip": facing < 0}
+
+
+## 视野锥、瞄准线由子节点 VisionCone 用加色混合绘制，读这几个值
+func cone_points() -> PackedVector2Array:
+	return _cone
+
+
+func aim_end() -> Vector2:
+	return _aim_end
+
+
+func is_locked() -> bool:
+	return _locked
+
+
+func focus() -> float:
+	return _focus

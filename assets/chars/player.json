@@ -1,0 +1,50 @@
+{
+ "frame": [
+  16,
+  16
+ ],
+ "anims": {
+  "idle": {
+   "from": 0,
+   "count": 4,
+   "fps": 5,
+   "loop": true
+  },
+  "run": {
+   "from": 4,
+   "count": 4,
+   "fps": 12,
+   "loop": true
+  },
+  "jump": {
+   "from": 8,
+   "count": 1,
+   "fps": 1,
+   "loop": false
+  },
+  "fall": {
+   "from": 9,
+   "count": 1,
+   "fps": 1,
+   "loop": false
+  },
+  "land": {
+   "from": 10,
+   "count": 1,
+   "fps": 1,
+   "loop": false
+  },
+  "wall": {
+   "from": 11,
+   "count": 1,
+   "fps": 1,
+   "loop": false
+  },
+  "dash": {
+   "from": 12,
+   "count": 1,
+   "fps": 1,
+   "loop": false
+  }
+ }
+}

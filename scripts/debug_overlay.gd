@@ -23,6 +23,13 @@ var initial_weapon: int:
 
 var _initial_weapon := WeaponDefs.Type.DART
 var _label: Label
+var _layer: CanvasLayer
+
+
+## 面板挂在根视口，关卡被释放时一起删掉（关卡移进 SubViewport 时也会 exit_tree，所以不能用 tree_exiting）
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_PREDELETE and is_instance_valid(_layer):
+		_layer.queue_free()
 var _player: Player
 
 
@@ -57,11 +64,14 @@ func _find_player() -> Player:
 
 func _build_panel() -> void:
 	var layer := CanvasLayer.new()
-	layer.layer = 10
-	add_child(layer)
+	layer.layer = 61
+	# 挂到根视口按窗口分辨率渲染（关卡在 320×180 的 SubViewport 里，挂在关卡下会糊）
+	PixelView.hud_root.add_child(layer)
+	_layer = layer
 	var ls := LabelSettings.new()
+	ls.font = UiFonts.text()
 	ls.font_size = 6
-	ls.outline_size = 2
+	ls.outline_size = 1
 	ls.outline_color = Color(0, 0, 0, 0.85)
 	_label = Label.new()
 	_label.label_settings = ls

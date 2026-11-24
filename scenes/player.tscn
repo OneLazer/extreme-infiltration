@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" path="res://scripts/player.gd" id="1_s"]
 [ext_resource type="Script" path="res://scripts/screen_shake.gd" id="2_shake"]
+[ext_resource type="Script" path="res://scripts/visual/player_visual.gd" id="3_vis"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_1"]
 size = Vector2(6, 10)
@@ -18,3 +19,6 @@ shape = SubResource("RectangleShape2D_1")
 position_smoothing_enabled = true
 position_smoothing_speed = 8.0
 script = ExtResource("2_shake")
+
+[node name="Visual" type="Node2D" parent="."]
+script = ExtResource("3_vis")

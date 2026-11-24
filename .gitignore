@@ -4,3 +4,6 @@
 # 第三方参考资料（独立仓库，不属于本项目）
 Celeste_Classic_NoelFB/
 .workbuddy/
+
+# 美术生成脚本的缓存
+__pycache__/

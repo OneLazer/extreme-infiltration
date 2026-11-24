@@ -83,6 +83,9 @@ func _physics_process(delta: float) -> void:
 				return
 	_sweep_kill(old, global_position)
 	_spin += delta * (30.0 if state != State.IDLE else 12.0)
+	_trail.push_front(global_position)
+	if _trail.size() > TRAIL_LEN:
+		_trail.resize(TRAIL_LEN)
 	queue_redraw()
 
 
@@ -131,8 +134,18 @@ func _sweep_kill(a: Vector2, b: Vector2) -> void:
 			g.kill()
 
 
+## 表现：旋转的回旋镖精灵（8 向步进，避免像素旋转糊掉）+ 一条渐隐拖尾
+const PROPS := preload("res://assets/props/props.png")
+const TRAIL_LEN := 7
+var _trail: Array[Vector2] = []
+
+
 func _draw() -> void:
-	var pts := PackedVector2Array()
-	for i in 3:
-		pts.append(Vector2.from_angle(_spin + i * TAU / 3.0) * 4.0)
-	draw_colored_polygon(pts, _color)
+	for i in range(1, _trail.size()):
+		var k := 1.0 - float(i) / TRAIL_LEN
+		var c := Color(_color.r * 0.5 * k, _color.g * 0.5 * k, _color.b * 0.5 * k, k)
+		draw_line(to_local(_trail[i - 1]).round(), to_local(_trail[i]).round(), c, 1.0 if i > 2 else 2.0)
+	var r := Prop.rect_of("icon_heavy" if type == WeaponDefs.Type.HEAVY_BOOMERANG else "icon_boomerang")
+	draw_set_transform(Vector2.ZERO, snappedf(_spin, PI / 4.0))
+	draw_texture_rect_region(PROPS, Rect2(-r.size / 2.0, r.size), r, Color(1.5, 1.5, 1.5))
+	draw_set_transform(Vector2.ZERO)
