@@ -31,7 +31,7 @@ signal weapons_changed
 @export_group("冲刺跳")
 @export var super_boost := 1.10          ## super：水平冲刺接跳，水平动量加成
 @export var hyper_boost := 1.40          ## hyper：下斜冲刺接跳，水平动量加成更大
-@export var wall_bounce_v := -170.0      ## 蹭墙跳垂直初速
+@export var wall_bounce_v := -10.0      ## 蹭墙跳垂直初速
 @export var wall_bounce_h := 160.0       ## 蹭墙跳离开墙面的水平速度
 
 # ---------------- 武器参数 ----------------
@@ -269,7 +269,7 @@ func _dash_wall_bounce(wall_dir: int) -> void:
 		_force_move_x = -wall_dir
 		_force_move_x_timer = wall_jump_force_time
 	velocity.x = -wall_dir * wall_bounce_h
-	velocity.y = minf(_dash_velocity.y, wall_bounce_v)   # 上冲贴墙时保留原有上升速度
+	velocity.y = wall_bounce_v        # 垂直速度完全由参数决定，不继承冲刺速度
 	_var_jump_timer = var_jump_time
 	_var_jump_speed = velocity.y
 	facing = -wall_dir
