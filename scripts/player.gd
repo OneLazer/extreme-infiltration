@@ -7,6 +7,9 @@ extends CharacterBody2D
 signal died
 signal weapons_changed
 
+## 相机震屏组件（用 preload 显式引用，避免依赖 class_name 的全局类缓存）
+const ScreenShakeScript := preload("res://scripts/screen_shake.gd")
+
 # ---------------- 移动参数（数值取自 Celeste Player.cs） ----------------
 @export_group("移动")
 @export var max_run := 90.0
@@ -29,10 +32,10 @@ signal weapons_changed
 
 # ---------------- 冲刺跳（武器反冲期间按跳打断） ----------------
 @export_group("冲刺跳")
-@export var super_speed := 260.0         ## super：水平冲刺接跳的固定水平速度
-@export var hyper_speed := 340.0         ## hyper：下斜冲刺接跳的固定水平速度
+@export var super_speed := 200.0         ## super：水平冲刺接跳的固定水平速度
+@export var hyper_speed := 260.0         ## hyper：下斜冲刺接跳的固定水平速度
 @export var wall_bounce_v := -200.0      ## 蹭墙跳垂直初速
-@export var wall_bounce_h := 160.0       ## 蹭墙跳离开墙面的水平速度
+@export var wall_bounce_h := 120.0       ## 蹭墙跳离开墙面的水平速度
 
 # ---------------- 武器参数 ----------------
 @export_group("武器")
@@ -68,6 +71,7 @@ var _freeze_dir := Vector2.ZERO
 var _dart_air_used := 0
 
 @onready var _shape: CollisionShape2D = $CollisionShape2D
+@onready var _camera: ScreenShakeScript = $Camera2D
 
 
 func _ready() -> void:
@@ -377,6 +381,7 @@ func _fire(dir: Vector2) -> void:
 		WeaponDefs.Type.BOOMERANG, WeaponDefs.Type.HEAVY_BOOMERANG:
 			_throw_boomerang(type, dir, def)
 	_consume_ammo()
+	_camera.shake(def.get("shake", 0.0), def.get("shake_time", 0.1))
 
 ## 瞬时射线：返回 {"end": 终点, "enemy": Guard 或 null, "hit": 是否命中}
 func _hitscan(dir: Vector2, max_range: float) -> Dictionary:
