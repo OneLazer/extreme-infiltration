@@ -520,20 +520,25 @@ func _fire_dart(dir: Vector2, def: Dictionary) -> void:
 		_dart_air_used += 1
 	if not res["hit"]:
 		return
-	# 用碰撞盒沿射线扫掠，得到不嵌墙的落点
-	var motion: Vector2 = res["end"] - global_position
-	var p := PhysicsShapeQueryParameters2D.new()
-	p.shape = _shape.shape
-	p.transform = _shape.global_transform
-	p.motion = motion
-	p.collision_mask = Game.LAYER_WORLD
-	p.exclude = [get_rid()]
-	var frac := get_world_2d().direct_space_state.cast_motion(p)
+	# 命中敌人：直接落到命中点。用碰撞盒扫掠时，斜线 / 贴墙的情况会先被墙截断，
+	# 玩家只走一半就停在墙面上，看起来像「打中了人却撞墙」。
+	# 撞墙：仍用碰撞盒扫掠，落点贴着墙面，不会嵌进墙里。
 	var enemy: Guard = res["enemy"]
 	if enemy:
 		enemy.kill()
 	Fx.burst(get_parent(), global_position, Palette.PLAYER, 4)
-	global_position += motion * frac[0]
+	if enemy != null:
+		global_position = res["end"]
+	else:
+		var motion: Vector2 = res["end"] - global_position
+		var p := PhysicsShapeQueryParameters2D.new()
+		p.shape = _shape.shape
+		p.transform = _shape.global_transform
+		p.motion = motion
+		p.collision_mask = Game.LAYER_WORLD
+		p.exclude = [get_rid()]
+		var frac := get_world_2d().direct_space_state.cast_motion(p)
+		global_position += motion * frac[0]
 	if not def["keep_velocity"]:
 		velocity = Vector2.ZERO
 	if enemy == null:
