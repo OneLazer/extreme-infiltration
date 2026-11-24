@@ -424,20 +424,76 @@ func _fire(dir: Vector2) -> void:
 	_consume_ammo()
 	_camera.shake(def.get("shake", 0.0), def.get("shake_time", 0.1))
 
-## 瞬时射线：返回 {"end": 终点, "enemy": Guard 或 null, "hit": 是否命中}
-func _hitscan(dir: Vector2, max_range: float) -> Dictionary:
+## 瞬时射线（带宽容判定）。
+## 命中判定不是一条线，而是一个矩形：沿瞄准方向长 max_range、垂直方向宽
+## assist_tiles 图格（见 WeaponDefs）。中心线先按原逻辑判定，墙会截断弹道；
+## 中心线没碰到敌人时，在矩形里挑最贴近瞄准线、且和玩家之间没有墙的敌人，
+## 把弹道以玩家为轴心偏折过去 —— 偏折后再射一次，保证另一端真的落在敌人身上。
+## 返回 {"dir": 实际弹道方向, "end": 终点, "enemy": Guard 或 null, "hit": 是否命中}
+func _hitscan(dir: Vector2, max_range: float, assist_tiles: float) -> Dictionary:
 	var from := global_position
-	var q := PhysicsRayQueryParameters2D.create(from, from + dir * max_range, Game.LAYER_WORLD | Game.LAYER_ENEMY, [get_rid()])
+	var r := _ray(from, from + dir * max_range, Game.LAYER_WORLD | Game.LAYER_ENEMY)
+	if not r.is_empty():
+		return {"dir": dir, "end": r.position, "enemy": r.collider as Guard, "hit": true}
+	var target := _assist_target(dir, max_range, assist_tiles)
+	if target == null:
+		return {"dir": dir, "end": from + dir * max_range, "enemy": null, "hit": false}
+	# 偏折方向 = 玩家 → 敌人中心；起点仍是玩家中心，所以只是绕玩家转了一个小角度
+	var shot := (target.global_position - from).normalized()
+	var reach := _ray(from, from + shot * max_range, Game.LAYER_ENEMY)
+	if reach.is_empty():
+		return {"dir": shot, "end": from + shot * max_range, "enemy": null, "hit": false}
+	return {"dir": shot, "end": reach.position, "enemy": reach.collider as Guard, "hit": true}
+
+
+## 在宽容矩形里挑目标：横向偏移最小的敌人优先（更贴近玩家瞄的方向），
+## 偏移相同则取更近的。和玩家之间隔着墙的敌人不算 —— 不能隔墙打。
+func _assist_target(dir: Vector2, max_range: float, assist_tiles: float) -> Guard:
+	var half := assist_tiles * Game.TILE * 0.5
+	if half <= 0.0:
+		return null
+	var band := RectangleShape2D.new()
+	band.size = Vector2(max_range, half * 2.0)
+	var q := PhysicsShapeQueryParameters2D.new()
+	q.shape = band
+	q.transform = Transform2D(dir.angle(), global_position + dir * (max_range * 0.5))
+	q.collision_mask = Game.LAYER_ENEMY
 	q.collide_with_areas = true
-	var r := get_world_2d().direct_space_state.intersect_ray(q)
-	if r.is_empty():
-		return {"end": from + dir * max_range, "enemy": null, "hit": false}
-	var enemy: Guard = r.collider as Guard
-	return {"end": r.position, "enemy": enemy, "hit": true}
+	q.collide_with_bodies = false
+	var best: Guard = null
+	var best_lateral := 0.0
+	var best_along := 0.0
+	for hit in get_world_2d().direct_space_state.intersect_shape(q, 32):
+		var g := hit["collider"] as Guard
+		if g == null or g.dead:
+			continue
+		var to := g.global_position - global_position
+		var along := to.dot(dir)                # 沿瞄准线的前后距离
+		if along <= 0.0 or along > max_range:
+			continue
+		var lateral := absf(to.cross(dir))      # 离瞄准线的横向偏移（dir 已归一化）
+		var better := best == null or lateral < best_lateral - 0.01
+		if not better and absf(lateral - best_lateral) <= 0.01:
+			better = along < best_along
+		if not better:
+			continue
+		if not _ray(global_position, g.global_position, Game.LAYER_WORLD).is_empty():
+			continue
+		best = g
+		best_lateral = lateral
+		best_along = along
+	return best
+
+
+## 一次射线查询。碰撞区域（Area2D，敌人）也要算命中
+func _ray(a: Vector2, b: Vector2, mask: int) -> Dictionary:
+	var q := PhysicsRayQueryParameters2D.create(a, b, mask, [get_rid()])
+	q.collide_with_areas = true
+	return get_world_2d().direct_space_state.intersect_ray(q)
 
 
 func _fire_dart(dir: Vector2, def: Dictionary) -> void:
-	var res := _hitscan(dir, def["range"])
+	var res := _hitscan(dir, def["range"], def["assist_tiles"])
 	Fx.trace(get_parent(), global_position, res["end"], def["color"])
 	if not is_on_floor():
 		_dart_air_used += 1
@@ -464,12 +520,14 @@ func _fire_dart(dir: Vector2, def: Dictionary) -> void:
 
 
 func _fire_air_gun(dir: Vector2, def: Dictionary) -> void:
-	var res := _hitscan(dir, def["range"])
+	var res := _hitscan(dir, def["range"], def["assist_tiles"])
 	Fx.trace(get_parent(), global_position, res["end"], def["color"])
 	var enemy: Guard = res["enemy"]
 	if enemy:
 		enemy.kill()
-	apply_dash(-dir * def["recoil_dash"], def["dash_time"], def["end_mult"])
+	# 反冲跟着实际弹道走：宽容判定偏折后依然是「子弹的反方向」
+	var shot: Vector2 = res["dir"]
+	apply_dash(-shot * def["recoil_dash"], def["dash_time"], def["end_mult"])
 
 func _throw_boomerang(type: int, dir: Vector2, def: Dictionary) -> void:
 	var b := Boomerang.new()

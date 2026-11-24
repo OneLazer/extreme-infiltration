@@ -3,6 +3,9 @@ extends RefCounted
 ## 武器参数表。玩法数值（射程、位移、拾取弹药）改这里。
 ## 回旋镖的飞行 / 回收动画节奏见 weapons/boomerang.gd 顶部的常量区。
 ## shake / shake_time：开火震屏强度（320x180 画布像素）与时长（秒）。
+## assist_tiles：宽容判定带宽（图格，默认 2）。命中判定不是一条线，而是一个
+##               沿瞄准方向长 射程、垂直方向宽 assist_tiles 的矩形；矩形碰到敌人
+##               就算命中。0 = 关闭宽容判定。
 ##
 ## 反冲方式：
 ##   recoil_add  —— 在当前速度上叠加 -发射方向 * 数值（轻微推力）
@@ -15,6 +18,7 @@ const DATA := {
 	Type.DART: {
 		"name": "飞镖", "color": Palette.DART,
 		"range": 320.0,            # 射程
+		"assist_tiles": 2.0,       # 宽容判定带宽（图格）
 		"keep_velocity": false,    # 瞬移后是否保留原速度
 		"shake": 2.0, "shake_time": 0.12,
 	},
@@ -35,6 +39,7 @@ const DATA := {
 	Type.AIR_GUN: {
 		"name": "气枪", "color": Palette.AIRGUN,
 		"range": 320.0,
+		"assist_tiles": 2.0,       # 宽容判定带宽（图格）
 		"recoil_dash": 320.0, "dash_time": 0.12, "end_mult": 0.6,
 		"shake": 2.0, "shake_time": 0.22,
 	},
