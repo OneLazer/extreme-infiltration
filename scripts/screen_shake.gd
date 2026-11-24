@@ -8,7 +8,7 @@ extends Camera2D
 @export var freq_x := 71.0          ## 水平抖动角速度（弧度/秒），越大抖得越快
 @export var freq_y := 53.0          ## 垂直抖动角速度（弧度/秒）
 @export var fade_in := 0.01         ## 起震淡入时间常数（秒），越小越接近硬冲击
-@export var fade_out := 0.04        ## 收尾淡出时间常数（秒），越大尾巴拖得越久
+@export var fade_out := 0.1        ## 收尾淡出时间常数（秒），越大尾巴拖得越久
 
 var _clock := 0.0                   ## 持续累加的时间，保证波形相位连续
 var _strength := 0.0

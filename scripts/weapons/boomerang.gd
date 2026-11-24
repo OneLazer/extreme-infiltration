@@ -11,10 +11,10 @@ const RADIUS := 3.0
 
 # ============ 动画手感（不导出，想调就改这里） ============
 ## 飞出耗时（秒）。飞行距离由 WeaponDefs 的 out_tiles 决定
-const OUT_TIME_NORMAL := 0.16
-const OUT_TIME_HEAVY := 0.20
+const OUT_TIME_NORMAL := 0.7
+const OUT_TIME_HEAVY := 1
 ## 飞出缓动指数：1 = 匀速；越大越「起步冲、末段缓」
-const OUT_EASE_POWER := 3.0
+const OUT_EASE_POWER := 7
 ## 收回：冻结后停顿（秒）→ 逐渐加速。数值越大收回越快
 const RETURN_DELAY := 0.05
 const RETURN_ACCEL := 3500.0

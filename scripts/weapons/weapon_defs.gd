@@ -36,7 +36,7 @@ const DATA := {
 		"name": "气枪", "color": Palette.AIRGUN,
 		"range": 320.0,
 		"recoil_dash": 320.0, "dash_time": 0.12, "end_mult": 0.6,
-		"shake": 5.0, "shake_time": 0.22,
+		"shake": 2.0, "shake_time": 0.22,
 	},
 }
 

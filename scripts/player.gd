@@ -1,6 +1,6 @@
 class_name Player
 extends CharacterBody2D
-## 玩家：移动移植自 Celeste Player.cs 的 NormalUpdate（跑、跳、墙滑、蹬墙跳），
+## 玩家：移动移植自 Celeste Player.cs 的 NormalUpdate（跑、跳、墙滑、蹬墙跳、二段跳），
 ## 武器反冲的冲刺可被跳跃打断：super / hyper / 蹭墙跳。
 ## 武器部分见下半段。原点在碰撞盒中心，碰撞盒 6x10。
 
@@ -30,9 +30,14 @@ const ScreenShakeScript := preload("res://scripts/screen_shake.gd")
 @export var wall_slide_time := 1.2
 @export var upward_corner_correction := 4
 
+# ---------------- 二段跳 ----------------
+@export_group("二段跳")
+@export var air_jump_count := 1          ## 离地后可跳次数（1 = 二段跳，0 = 关闭）
+@export var air_jump_speed := -100.0     ## 二段跳初速（比地面跳略弱）
+
 # ---------------- 冲刺跳（武器反冲期间按跳打断） ----------------
 @export_group("冲刺跳")
-@export var super_speed := 200.0         ## super：水平冲刺接跳的固定水平速度
+@export var super_speed := 260.0         ## super：水平冲刺接跳的固定水平速度
 @export var hyper_speed := 260.0         ## hyper：下斜冲刺接跳的固定水平速度
 @export var wall_bounce_v := -200.0      ## 蹭墙跳垂直初速
 @export var wall_bounce_h := 120.0       ## 蹭墙跳离开墙面的水平速度
@@ -48,6 +53,7 @@ var dead := false
 var _move_x := 0
 var _jump_grace_timer := 0.0
 var _jump_buffer_timer := 0.0
+var _air_jumps_used := 0        # 本段滞空已用的二段跳次数，落地清零
 var _var_jump_timer := 0.0
 var _var_jump_speed := 0.0
 var _force_move_x := 0
@@ -131,6 +137,7 @@ func _update_movement(delta: float) -> void:
 		_wall_slide_timer = wall_slide_time
 		_jump_grace_timer = jump_grace_time
 		_dart_air_used = 0
+		_air_jumps_used = 0
 	elif _jump_grace_timer > 0.0:
 		_jump_grace_timer -= delta
 	if _jump_buffer_timer > 0.0:
@@ -186,7 +193,8 @@ func _normal_update(delta: float, on_ground: bool) -> void:
 		else:
 			_var_jump_timer = 0.0
 
-	# 起跳 / 蹬墙跳
+	# 起跳 / 蹬墙跳 / 二段跳
+	# 土狼时间内的跳走 _jump()，和落地跳是同一条分支，所以不消耗二段跳
 	if _jump_buffer_timer > 0.0:
 		if _jump_grace_timer > 0.0:
 			_jump()
@@ -194,6 +202,8 @@ func _normal_update(delta: float, on_ground: bool) -> void:
 			_wall_jump(-1)
 		elif _wall_check(-1, wall_jump_check_dist):
 			_wall_jump(1)
+		elif _can_air_jump():
+			_air_jump()
 
 
 func _jump() -> void:
@@ -204,6 +214,28 @@ func _jump() -> void:
 	velocity.x += jump_h_boost * _move_x
 	velocity.y = jump_speed
 	_var_jump_speed = velocity.y
+
+
+## 二段跳。土狼时间内的跳会走 _jump()，不会到这条分支，所以不消耗次数。
+func _air_jump() -> void:
+	_jump_buffer_timer = 0.0
+	_air_jumps_used += 1
+	_var_jump_timer = var_jump_time
+	_var_jump_speed = air_jump_speed
+	_wall_slide_timer = wall_slide_time
+	# 不覆盖更快的上升速度：蹬墙跳 / 反冲后立刻接跳时不会被拽慢
+	velocity.y = minf(velocity.y, air_jump_speed)
+	Fx.burst(get_parent(), global_position + Vector2(0.0, 5.0), Palette.PLAYER, 5)
+
+
+func _can_air_jump() -> bool:
+	return _air_jumps_used < air_jump_count
+
+
+## 剩余二段跳次数（调试面板 / HUD 用）
+func air_jumps_left() -> int:
+	return maxi(air_jump_count - _air_jumps_used, 0)
+
 
 ## dir：跳离方向（墙在 -dir 一侧）
 func _wall_jump(dir: int) -> void:
@@ -220,7 +252,8 @@ func _wall_jump(dir: int) -> void:
 	facing = dir
 
 
-## 冲刺中按跳：贴墙 → 蹭墙跳，否则按冲刺方向区分 super / hyper。
+## 冲刺中按跳：贴墙 → 蹭墙跳，否则按冲刺方向区分 super / hyper；
+## 空中且还有二段跳 → 用二段跳打断锁速。
 ## 蹭墙跳只看「离地 + 贴着墙」，不要求冲刺朝着墙，所以垂直上冲沿墙也能弹；
 ## 地面上的撞墙冲刺不抢跳，交给 super。
 ## 返回 true 表示冲刺已被跳跃打断。
@@ -236,14 +269,22 @@ func _try_dash_jump(on_ground: bool) -> bool:
 				continue
 			_dash_wall_bounce(d)
 			return true
-	# super / hyper 需要地面或土狼时间
-	if _jump_grace_timer <= 0.0:
-		return false
-	if absf(_dash_velocity.y) < 1.0:
-		_dash_super_jump()
+	# super / hyper 需要地面或土狼时间；土狼时间内的跳不消耗二段跳
+	if _jump_grace_timer > 0.0:
+		if absf(_dash_velocity.y) < 1.0:
+			_dash_super_jump()
+			return true
+		if _dash_velocity.y > 1.0 and absf(_dash_velocity.x) > 1.0:
+			_dash_hyper_jump()
+			return true
+		# 竖直冲刺（如向上打气枪）落地前按跳：按普通跳处理，别把跳跃吞掉
+		_break_dash()
+		_jump()
 		return true
-	if _dash_velocity.y > 1.0 and absf(_dash_velocity.x) > 1.0:
-		_dash_hyper_jump()
+	# 空中冲刺中按跳：用二段跳打断锁速
+	if _can_air_jump():
+		_break_dash()
+		_air_jump()
 		return true
 	return false
 

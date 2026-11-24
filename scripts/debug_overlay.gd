@@ -83,9 +83,9 @@ func _process(_delta: float) -> void:
 		bmr = ["OUT", "IDLE", "RETURN"][p.active_boomerang.state]
 	var wname := str(WeaponDefs.get_def(p.current_weapon())["name"])
 	var suffix := "∞" if p.weapon_queue.is_empty() else ""
-	_label.text = "POS %.1f, %.1f   VEL %.1f, %.1f\nFLR %d  FROZEN %d  Q %d  BMR %s\nWPN %s%s" % [
+	_label.text = "POS %.1f, %.1f   VEL %.1f, %.1f\nFLR %d  AIR %d  FROZEN %d  Q %d  BMR %s\nWPN %s%s" % [
 		p.global_position.x, p.global_position.y,
 		p.velocity.x, p.velocity.y,
-		int(p.is_on_floor()), int(Game.frozen), p.weapon_queue.size(), bmr,
+		int(p.is_on_floor()), p.air_jumps_left(), int(Game.frozen), p.weapon_queue.size(), bmr,
 		wname, suffix,
 	]

@@ -1,18 +1,13 @@
-[gd_scene format=4]
+[gd_scene format=4 uid="uid://dk3jn2hv6a8jh"]
 
-[ext_resource type="Script" path="res://scripts/level.gd" id="1_qdeet"]
-[ext_resource type="TileSet" path="res://assets/tiles/neon_tileset.tres" id="2_y72ps"]
+[ext_resource type="Script" uid="uid://d3dvcvif0pugs" path="res://scripts/level.gd" id="1_qdeet"]
+[ext_resource type="TileSet" uid="uid://dxhjmll4045ua" path="res://assets/tiles/neon_tileset.tres" id="2_y72ps"]
 [ext_resource type="PackedScene" path="res://scenes/flying_guard.tscn" id="3_xw3ee"]
-[ext_resource type="Script" path="res://scripts/enemies/flying_guard.gd" id="4_l0eo6"]
 [ext_resource type="PackedScene" path="res://scenes/ground_guard.tscn" id="5_d3o6j"]
-[ext_resource type="Script" path="res://scripts/enemies/ground_guard.gd" id="6_pdl2l"]
 [ext_resource type="PackedScene" path="res://scenes/exit.tscn" id="7_2t17w"]
-[ext_resource type="Script" path="res://scripts/exit.gd" id="8_bm28l"]
 [ext_resource type="PackedScene" path="res://scenes/weapon_pickup.tscn" id="9_2qse1"]
-[ext_resource type="Script" path="res://scripts/pickup.gd" id="10_xt52j"]
 [ext_resource type="PackedScene" path="res://scenes/player.tscn" id="11_m68c3"]
-[ext_resource type="Script" path="res://scripts/player.gd" id="12_p6fww"]
-[ext_resource type="Script" path="res://scripts/debug_overlay.gd" id="13_dbg0"]
+[ext_resource type="Script" uid="uid://cen6stuus1t83" path="res://scripts/debug_overlay.gd" id="13_dbg0"]
 
 [sub_resource type="Environment" id="Environment_6g61c"]
 background_mode = 3
@@ -33,80 +28,46 @@ tile_set = ExtResource("2_y72ps")
 
 [node name="Entities" type="Node2D" parent="." unique_id=1816829107]
 
-[node name="FlyingGuard" type="Area2D" parent="Entities" unique_id=1580269222 instance=ExtResource("3_xw3ee")]
+[node name="FlyingGuard" parent="Entities" unique_id=1580269222 instance=ExtResource("3_xw3ee")]
 position = Vector2(524, 36)
-collision_layer = 4
-collision_mask = 2
-script = ExtResource("4_l0eo6")
 
-[node name="FlyingGuard2" type="Area2D" parent="Entities" unique_id=2136913508 instance=ExtResource("3_xw3ee")]
+[node name="FlyingGuard2" parent="Entities" unique_id=2136913508 instance=ExtResource("3_xw3ee")]
 position = Vector2(444, 60)
-collision_layer = 4
-collision_mask = 2
-script = ExtResource("4_l0eo6")
 
-[node name="FlyingGuard3" type="Area2D" parent="Entities" unique_id=716154949 instance=ExtResource("3_xw3ee")]
+[node name="FlyingGuard3" parent="Entities" unique_id=716154949 instance=ExtResource("3_xw3ee")]
 position = Vector2(244, 68)
-collision_layer = 4
-collision_mask = 2
-script = ExtResource("4_l0eo6")
 
-[node name="GroundGuard" type="Area2D" parent="Entities" unique_id=2067210137 instance=ExtResource("5_d3o6j")]
+[node name="GroundGuard" parent="Entities" unique_id=2067210137 instance=ExtResource("5_d3o6j")]
 position = Vector2(564, 90)
-collision_layer = 4
-collision_mask = 2
-script = ExtResource("6_pdl2l")
 facing = -1
 
-[node name="Exit" type="Area2D" parent="Entities" unique_id=418918905 instance=ExtResource("7_2t17w")]
+[node name="Exit" parent="Entities" unique_id=418918905 instance=ExtResource("7_2t17w")]
 position = Vector2(620, 88)
-collision_layer = 8
-collision_mask = 2
-script = ExtResource("8_bm28l")
 
-[node name="FlyingGuard4" type="Area2D" parent="Entities" unique_id=1504409556 instance=ExtResource("3_xw3ee")]
+[node name="FlyingGuard4" parent="Entities" unique_id=1504409556 instance=ExtResource("3_xw3ee")]
 position = Vector2(84, 124)
-collision_layer = 4
-collision_mask = 2
-script = ExtResource("4_l0eo6")
 
-[node name="WeaponPickup" type="Area2D" parent="Entities" unique_id=2140626062 instance=ExtResource("9_2qse1")]
+[node name="WeaponPickup" parent="Entities" unique_id=2140626062 instance=ExtResource("9_2qse1")]
 position = Vector2(52, 164)
-collision_layer = 8
-collision_mask = 2
-script = ExtResource("10_xt52j")
 
-[node name="GroundGuard2" type="Area2D" parent="Entities" unique_id=11613258 instance=ExtResource("5_d3o6j")]
+[node name="GroundGuard2" parent="Entities" unique_id=11613258 instance=ExtResource("5_d3o6j")]
 position = Vector2(124, 162)
-collision_layer = 4
-collision_mask = 2
-script = ExtResource("6_pdl2l")
 
-[node name="WeaponPickup2" type="Area2D" parent="Entities" unique_id=354523509 instance=ExtResource("9_2qse1")]
+[node name="WeaponPickup2" parent="Entities" unique_id=354523509 instance=ExtResource("9_2qse1")]
 position = Vector2(212, 164)
-collision_layer = 8
-collision_mask = 2
-script = ExtResource("10_xt52j")
 weapon_type = 2
 
-[node name="GroundGuard3" type="Area2D" parent="Entities" unique_id=1347968281 instance=ExtResource("5_d3o6j")]
+[node name="GroundGuard3" parent="Entities" unique_id=1347968281 instance=ExtResource("5_d3o6j")]
 position = Vector2(324, 162)
-collision_layer = 4
-collision_mask = 2
-script = ExtResource("6_pdl2l")
 facing = -1
 
-[node name="WeaponPickup3" type="Area2D" parent="Entities" unique_id=349828158 instance=ExtResource("9_2qse1")]
+[node name="WeaponPickup3" parent="Entities" unique_id=349828158 instance=ExtResource("9_2qse1")]
 position = Vector2(364, 164)
-collision_layer = 8
-collision_mask = 2
-script = ExtResource("10_xt52j")
 weapon_type = 3
 
-[node name="Player" type="CharacterBody2D" parent="." unique_id=1457860643 instance=ExtResource("11_m68c3")]
+[node name="Player" parent="." unique_id=1457860643 instance=ExtResource("11_m68c3")]
 position = Vector2(28, 163)
-collision_layer = 2
-script = ExtResource("12_p6fww")
 
 [node name="DebugOverlay" type="Node" parent="." unique_id=1745182913]
 script = ExtResource("13_dbg0")
+initial_weapon = 2
