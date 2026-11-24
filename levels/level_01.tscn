@@ -70,4 +70,3 @@ position = Vector2(28, 163)
 
 [node name="DebugOverlay" type="Node" parent="." unique_id=1745182913]
 script = ExtResource("13_dbg0")
-initial_weapon = 2

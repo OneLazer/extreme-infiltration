@@ -27,9 +27,9 @@ const DATA := {
 		"assist_tiles": 2.0,       # 宽容判定带宽（图格）
 		"assist_tiles_diagonal": 4.0,   # 斜向射击的带宽（图格）
 		"keep_velocity": false,    # 瞬移后是否保留原速度
-		"bounce_wall_x": 50.0,     # 撞竖直墙：反向 X 速度
-		"bounce_wall_up": 40.0,    # 撞竖直墙：向上 Y 速度
-		"bounce_floor_up": 40.0,   # 撞地板：向上 Y 速度
+		"bounce_wall_x": 150.0,     # 撞竖直墙：反向 X 速度
+		"bounce_wall_up": 150.0,    # 撞竖直墙：向上 Y 速度
+		"bounce_floor_up": 150.0,   # 撞地板：向上 Y 速度
 		"shake": 2.0, "shake_time": 0.12,
 	},
 	Type.BOOMERANG: {
