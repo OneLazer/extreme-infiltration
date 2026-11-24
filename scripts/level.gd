@@ -68,7 +68,7 @@ func _refresh_hud() -> void:
 	var parts: Array[String] = []
 	for w in Game.player.weapon_queue:
 		parts.append("%s×%d" % [WeaponDefs.get_def(w["type"])["name"], w["ammo"]])
-	parts.append("回旋镖∞")
+	parts.append("%s∞" % WeaponDefs.get_def(Game.player.current_weapon())["name"])
 	_hud.text = "武器  %s\n守卫  %d    时间  %.1f" % [" → ".join(parts), enemies_left, time]
 
 

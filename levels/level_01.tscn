@@ -12,6 +12,7 @@
 [ext_resource type="Script" path="res://scripts/pickup.gd" id="10_xt52j"]
 [ext_resource type="PackedScene" path="res://scenes/player.tscn" id="11_m68c3"]
 [ext_resource type="Script" path="res://scripts/player.gd" id="12_p6fww"]
+[ext_resource type="Script" path="res://scripts/debug_overlay.gd" id="13_dbg0"]
 
 [sub_resource type="Environment" id="Environment_6g61c"]
 background_mode = 3
@@ -106,3 +107,6 @@ weapon_type = 3
 position = Vector2(28, 163)
 collision_layer = 2
 script = ExtResource("12_p6fww")
+
+[node name="DebugOverlay" type="Node" parent="." unique_id=1745182913]
+script = ExtResource("13_dbg0")
