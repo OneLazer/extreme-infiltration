@@ -426,24 +426,32 @@ func _fire(dir: Vector2) -> void:
 
 ## 瞬时射线（带宽容判定）。
 ## 命中判定不是一条线，而是一个矩形：沿瞄准方向长 max_range、垂直方向宽
-## assist_tiles 图格（见 WeaponDefs）。中心线先按原逻辑判定，墙会截断弹道；
+## assist_tiles 图格（见 WeaponDefs）。中心线先按原逻辑判定；只有中心线真的打中敌人
+## 才直接返回 —— 撞墙不算，否则关卡里几乎每枪尽头都是墙，宽容判定永远轮不到。
 ## 中心线没碰到敌人时，在矩形里挑最贴近瞄准线、且和玩家之间没有墙的敌人，
 ## 把弹道以玩家为轴心偏折过去 —— 偏折后再射一次，保证另一端真的落在敌人身上。
 ## 返回 {"dir": 实际弹道方向, "end": 终点, "enemy": Guard 或 null, "hit": 是否命中}
 func _hitscan(dir: Vector2, max_range: float, assist_tiles: float) -> Dictionary:
 	var from := global_position
 	var r := _ray(from, from + dir * max_range, Game.LAYER_WORLD | Game.LAYER_ENEMY)
+	var direct: Guard = null
 	if not r.is_empty():
-		return {"dir": dir, "end": r.position, "enemy": r.collider as Guard, "hit": true}
+		direct = r.collider as Guard
+	if direct != null:
+		return {"dir": dir, "end": r.position, "enemy": direct, "hit": true}
+	# 中心线没打中敌人（可能先撞到墙）：墙不参与宽容判定，只用来兜底落点
 	var target := _assist_target(dir, max_range, assist_tiles)
-	if target == null:
-		return {"dir": dir, "end": from + dir * max_range, "enemy": null, "hit": false}
-	# 偏折方向 = 玩家 → 敌人中心；起点仍是玩家中心，所以只是绕玩家转了一个小角度
-	var shot := (target.global_position - from).normalized()
-	var reach := _ray(from, from + shot * max_range, Game.LAYER_ENEMY)
-	if reach.is_empty():
-		return {"dir": shot, "end": from + shot * max_range, "enemy": null, "hit": false}
-	return {"dir": shot, "end": reach.position, "enemy": reach.collider as Guard, "hit": true}
+	if target != null:
+		# 偏折方向 = 玩家 → 敌人中心；起点仍是玩家中心，所以只是绕玩家转了一个小角度
+		var shot := (target.global_position - from).normalized()
+		var reach := _ray(from, from + shot * max_range, Game.LAYER_ENEMY)
+		if not reach.is_empty():
+			return {"dir": shot, "end": reach.position, "enemy": reach.collider as Guard, "hit": true}
+	# 没目标（或目标在查询后消失）：退回中心线结果（墙 / 射程尽头）
+	var end := from + dir * max_range
+	if not r.is_empty():
+		end = r.position
+	return {"dir": dir, "end": end, "enemy": null, "hit": not r.is_empty()}
 
 
 ## 在宽容矩形里挑目标：横向偏移最小的敌人优先（更贴近玩家瞄的方向），
