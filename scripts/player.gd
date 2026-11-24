@@ -2,6 +2,7 @@ class_name Player
 extends CharacterBody2D
 ## 玩家：移动移植自 Celeste Player.cs 的 NormalUpdate（跑、跳、墙滑、蹬墙跳、二段跳），
 ## 武器反冲的冲刺可被跳跃打断：super / hyper / 蹭墙跳。
+## 瞄准用鼠标：玩家中心 → 光标的方向就是弹道方向，命中判定另带宽容带（见 WeaponDefs.assist_tiles）。
 ## 武器部分见下半段。原点在碰撞盒中心，碰撞盒 6x10。
 
 signal died
@@ -44,11 +45,16 @@ const ScreenShakeScript := preload("res://scripts/screen_shake.gd")
 
 # ---------------- 武器参数 ----------------
 @export_group("武器")
-@export var aim_freeze_frames := 4      ## 按下方向键后的冻结帧数
+@export var aim_freeze_frames := 0      ## 开火前的全场冻结帧数。鼠标瞄准下默认 0（点下即发射）
+@export var recoil_snap_deg := 12.0     ## 反冲方向吸附到 8 方向的容差（度）；0 = 完全跟随鼠标
 @export var dart_air_uses := -1         ## 飞镖离地后可用次数，-1 = 无限
+@export var hide_os_cursor := true      ## 隐藏系统鼠标指针，改用武器色准星
 
 var facing := 1
 var dead := false
+
+var _aim_dir := Vector2.RIGHT   # 当前瞄准方向（玩家中心 → 光标）。光标压在角色身上时保留上一帧
+var _aim_len := 0.0             # 瞄准线显示长度：撞墙或到光标处截断
 
 var _move_x := 0
 var _jump_grace_timer := 0.0
@@ -83,6 +89,8 @@ var _dart_air_used := 0
 func _ready() -> void:
 	Game.player = self
 	Game.frozen = false
+	if hide_os_cursor:
+		Input.set_mouse_mode(Input.MOUSE_MODE_HIDDEN)
 
 
 func _physics_process(delta: float) -> void:
@@ -91,14 +99,13 @@ func _physics_process(delta: float) -> void:
 	# 回旋镖收回期间冻结玩家（瞄准冻结由下面的 _freeze_left 分支处理）
 	if Game.frozen and _freeze_left <= 0:
 		return
+	_update_aim()
 	if Input.is_action_just_pressed("jump"):
 		_jump_buffer_timer = jump_buffer_time
 
-	# 瞄准冻结：全场停止，累积方向键，结束时按当时按住的方向发射
+	# 瞄准冻结（可选，默认关闭）：全场停止，冻结期间瞄准仍跟随鼠标，结束时按当前方向发射
 	if _freeze_left > 0:
-		var held := _read_aim()
-		if held != Vector2.ZERO:
-			_freeze_dir = held
+		_freeze_dir = _aim_dir
 		_freeze_left -= 1
 		if _freeze_left == 0:
 			Game.frozen = false
@@ -106,15 +113,13 @@ func _physics_process(delta: float) -> void:
 		queue_redraw()
 		return
 
-	if _aim_just_pressed():
+	if Input.is_action_just_pressed("fire"):
 		if is_instance_valid(active_boomerang):
 			active_boomerang.recall()
 		elif _can_fire():
-			_freeze_dir = _read_aim()
-			if _freeze_dir == Vector2.ZERO:   # 同一帧内按下又松开的极短点按
-				_freeze_dir = _just_pressed_aim()
+			_freeze_dir = _aim_dir
 			if aim_freeze_frames <= 0:
-				_fire(_freeze_dir)
+				_fire(_aim_dir)
 			else:
 				_freeze_left = aim_freeze_frames
 				Game.frozen = true
@@ -274,10 +279,12 @@ func _try_dash_jump(on_ground: bool) -> bool:
 		if absf(_dash_velocity.y) < 1.0:
 			_dash_super_jump()
 			return true
-		if _dash_velocity.y > 1.0 and absf(_dash_velocity.x) > 1.0:
+		# 鼠标瞄准下冲刺角度是连续的：只有「不低于 45° 斜下」才算 hyper，
+		# 更陡的下斜当普通跳，否则对着脚下开一枪也能白嫖一个 hyper。
+		if _dash_velocity.y > 1.0 and absf(_dash_velocity.x) >= _dash_velocity.y:
 			_dash_hyper_jump()
 			return true
-		# 竖直冲刺（如向上打气枪）落地前按跳：按普通跳处理，别把跳跃吞掉
+		# 陡峭下冲 / 竖直冲刺（如向上打气枪）落地前按跳：按普通跳处理，别把跳跃吞掉
 		_break_dash()
 		_jump()
 		return true
@@ -364,24 +371,42 @@ func apply_dash(vel: Vector2, time: float, end_mult: float) -> void:
 
 # ======================= 武器 =======================
 
-func _read_aim() -> Vector2:
-	return Vector2(Input.get_axis("aim_left", "aim_right"), Input.get_axis("aim_up", "aim_down")).sign()
+## 鼠标瞄准：玩家中心 → 光标。
+## 光标几乎压在角色身上（< 0.5px）时保留上一帧方向，避免归一化出零向量。
+## 顺带算一次瞄准线长度：到光标或撞墙处截断，给 _draw 画瞄准线用。
+func _update_aim() -> void:
+	var to := get_global_mouse_position() - global_position
+	if to.length() > 0.5:
+		_aim_dir = to.normalized()
+	var reach := minf(to.length(), _aim_reach())
+	_aim_len = 0.0
+	if reach <= 0.0:
+		return
+	var r := _ray(global_position, global_position + _aim_dir * reach, Game.LAYER_WORLD)
+	_aim_len = (r.position - global_position).length() if not r.is_empty() else reach
 
 
-func _aim_just_pressed() -> bool:
-	return _just_pressed_aim() != Vector2.ZERO
+## 当前武器的最大瞄距（截断瞄准线显示用）
+func _aim_reach() -> float:
+	var def := WeaponDefs.get_def(current_weapon())
+	if def.has("range"):
+		return float(def["range"])
+	if def.has("out_tiles"):
+		return float(def["out_tiles"]) * Game.TILE
+	return 320.0
 
 
-func _just_pressed_aim() -> Vector2:
-	var d := Vector2.ZERO
-	var any := false
-	for pair in [["aim_left", Vector2.LEFT], ["aim_right", Vector2.RIGHT], ["aim_up", Vector2.UP], ["aim_down", Vector2.DOWN]]:
-		if Input.is_action_just_pressed(pair[0]):
-			d += pair[1]
-			any = true
-	if any and d == Vector2.ZERO:
-		d.x = facing   # 相反方向同时按下互相抵消时，取朝向
-	return d
+## 反冲方向：鼠标瞄准是连续的，但 super / hyper / 蹭墙跳这些位移技巧依赖 8 方向冲刺。
+## 瞄准方向离最近的 8 方向不超过 recoil_snap_deg 时，反冲吸附到那个方向，其余角度完全跟随鼠标。
+## recoil_snap_deg = 0 表示关闭吸附。
+func _recoil_dir(dir: Vector2) -> Vector2:
+	if recoil_snap_deg <= 0.0:
+		return dir
+	var step := PI * 0.25
+	var snapped := Vector2.from_angle(roundf(dir.angle() / step) * step)
+	if rad_to_deg(absf(dir.angle_to(snapped))) <= recoil_snap_deg:
+		return snapped
+	return dir
 
 
 func current_weapon() -> int:
@@ -425,8 +450,7 @@ func _fire(dir: Vector2) -> void:
 	_camera.shake(def.get("shake", 0.0), def.get("shake_time", 0.1))
 
 ## 瞬时射线（带宽容判定）。
-## 命中判定不是一条线，而是一个矩形：沿瞄准方向长 max_range、垂直方向宽
-## band_tiles 图格（正十字 / 斜向由 _assist_band() 选，见 WeaponDefs）。
+## 命中判定不是一条线，而是一个矩形：沿瞄准方向长 max_range、垂直方向宽 band_tiles 图格。
 ## 中心线先按原逻辑判定；只有中心线真的打中敌人
 ## 才直接返回 —— 撞墙不算，否则关卡里几乎每枪尽头都是墙，宽容判定永远轮不到。
 ## 中心线没碰到敌人时，在矩形里挑最贴近瞄准线、且和玩家之间没有墙的敌人，
@@ -458,13 +482,10 @@ func _hitscan(dir: Vector2, max_range: float, band_tiles: float) -> Dictionary:
 	return {"dir": dir, "end": end, "enemy": null, "hit": not r.is_empty(), "normal": normal}
 
 
-## 宽容判定带宽（图格）。斜向（两轴都有分量）用 assist_tiles_diagonal，
-## 正十字用 assist_tiles；斜向没配就退回 assist_tiles。
-func _assist_band(dir: Vector2, def: Dictionary) -> float:
-	if absf(dir.x) > 0.01 and absf(dir.y) > 0.01:
-		var wide: float = def.get("assist_tiles_diagonal", def["assist_tiles"])
-		return wide
-	return def["assist_tiles"]
+## 宽容判定带宽（图格）。鼠标瞄准角度是连续的，所有方向统一一档，
+## 不再像 8 向瞄准那样给斜向单独放宽。
+func _assist_tiles(def: Dictionary) -> float:
+	return float(def.get("assist_tiles", 3.0))
 
 
 ## 在宽容矩形里挑目标：横向偏移最小的敌人优先（更贴近玩家瞄的方向），
@@ -514,7 +535,7 @@ func _ray(a: Vector2, b: Vector2, mask: int) -> Dictionary:
 
 
 func _fire_dart(dir: Vector2, def: Dictionary) -> void:
-	var res := _hitscan(dir, def["range"], _assist_band(dir, def))
+	var res := _hitscan(dir, def["range"], _assist_tiles(def))
 	Fx.trace(get_parent(), global_position, res["end"], def["color"])
 	if not is_on_floor():
 		_dart_air_used += 1
@@ -544,10 +565,10 @@ func _fire_dart(dir: Vector2, def: Dictionary) -> void:
 	if enemy == null:
 		_apply_dart_impact(res["normal"], def)
 	else:
-		# 打中敌人时按「按键方向」套用同一套收尾手感：
-		# 上下 → 当成撞地板；横向 / 斜向 → 当成撞竖墙（反向 X 取弹道 X 的反方向）
+		# 打中敌人时按「瞄准方向」套用同一套收尾手感：
+		# 偏竖直 → 当成撞地板；否则 → 当成撞竖墙（反向 X 取弹道 X 的反方向）
 		var fake_normal := Vector2(-signf(dir.x), 0.0)
-		if absf(dir.x) <= 0.01:
+		if absf(dir.y) > absf(dir.x):
 			fake_normal = Vector2(0.0, -1.0)
 		_apply_dart_impact(fake_normal, def)
 	_dash_timer = 0.0
@@ -567,19 +588,19 @@ func _apply_dart_impact(normal: Vector2, def: Dictionary) -> void:
 
 
 func _fire_air_gun(dir: Vector2, def: Dictionary) -> void:
-	var res := _hitscan(dir, def["range"], _assist_band(dir, def))
+	var res := _hitscan(dir, def["range"], _assist_tiles(def))
 	Fx.trace(get_parent(), global_position, res["end"], def["color"])
 	var enemy: Guard = res["enemy"]
 	if enemy:
 		enemy.kill()
-	# 反冲固定用按键方向，不跟偏折后的弹道：宽容判定只放宽命中，
-	# 不能带偏 super / hyper / 蹭墙跳这些依赖冲刺方向的位移手感。
-	apply_dash(-dir * def["recoil_dash"], def["dash_time"], def["end_mult"])
+	# 反冲方向单独做 8 方向吸附（见 _recoil_dir），不跟偏折后的弹道：
+	# 宽容判定只放宽命中，不能带偏 super / hyper / 蹭墙跳这些依赖冲刺方向的位移手感。
+	apply_dash(-_recoil_dir(dir) * def["recoil_dash"], def["dash_time"], def["end_mult"])
 
 func _throw_boomerang(type: int, dir: Vector2, def: Dictionary) -> void:
 	# 宽容判定：在投掷距离内、宽容带宽里挑最贴近瞄准线的敌人，把投掷方向偏折过去
 	var out_range: float = def["out_tiles"] * Game.TILE
-	var target := _assist_target(dir, out_range, _assist_band(dir, def))
+	var target := _assist_target(dir, out_range, _assist_tiles(def))
 	var throw_dir := dir
 	if target != null:
 		throw_dir = (target.global_position - global_position).normalized()
@@ -589,11 +610,12 @@ func _throw_boomerang(type: int, dir: Vector2, def: Dictionary) -> void:
 	b.global_position = global_position
 	b.begin()
 	active_boomerang = b
-	# 反冲仍按按键方向 dir，不跟偏折后的投掷方向
+	# 反冲仍按 8 方向吸附后的方向，不跟偏折后的投掷方向
+	var rd := _recoil_dir(dir)
 	if def.has("recoil_add"):
-		velocity += -dir * def["recoil_add"]
+		velocity += -rd * def["recoil_add"]
 	if def.has("recoil_dash"):
-		apply_dash(-dir * def["recoil_dash"], def["dash_time"], def["end_mult"])
+		apply_dash(-rd * def["recoil_dash"], def["dash_time"], def["end_mult"])
 
 
 ## 回旋镖归位时由 Boomerang 调用。move_dir：回旋镖归位瞬间的移动方向
@@ -621,10 +643,26 @@ func die() -> void:
 
 func _draw() -> void:
 	draw_rect(Rect2(-3, -5, 6, 10), Palette.PLAYER)
-	draw_rect(Rect2(-1 + facing * 1.5, -3, 2, 2), Color(0.05, 0.02, 0.1))
+	# 眼睛朝瞄准方向偏，跟着鼠标看
+	draw_rect(Rect2(-1 + _aim_dir.x * 1.5, -3 + _aim_dir.y * 1.5, 2, 2), Color(0.05, 0.02, 0.1))
 	# 头顶小方块：当前武器颜色
 	var wdef := WeaponDefs.get_def(current_weapon())
 	draw_rect(Rect2(-1.5, -9, 3, 2), wdef["color"])
-	if _freeze_left > 0:
-		var d := _freeze_dir.normalized() if _freeze_dir != Vector2.ZERO else Vector2(facing, 0)
-		draw_line(d * 6.0, d * 18.0, wdef["color"], 1.0)
+	_draw_aim_guide(wdef)
+
+
+## 鼠标瞄准的视觉反馈：玩家 → 光标的淡色瞄准线（撞墙处截断，冻结时加亮）+ 光标处准星。
+## 准星画在玩家节点里，所以和其他实体同一层，但玩家节点在关卡里排在实体之后，正常盖在上面。
+func _draw_aim_guide(wdef: Dictionary) -> void:
+	var col: Color = wdef["color"]
+	var start := _aim_dir * 5.0
+	if _aim_len > 5.0:
+		var line_c := col
+		line_c.a = 0.55 if _freeze_left > 0 else 0.18
+		draw_line(start, _aim_dir * _aim_len, line_c, 1.0)
+	var mouse := to_local(get_global_mouse_position())
+	var cross := col
+	cross.a = 0.9
+	for d in [Vector2.LEFT, Vector2.RIGHT, Vector2.UP, Vector2.DOWN]:
+		draw_line(mouse + d * 2.0, mouse + d * 4.0, cross, 1.0)
+	draw_rect(Rect2(mouse - Vector2(0.5, 0.5), Vector2.ONE), cross)

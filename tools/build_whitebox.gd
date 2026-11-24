@@ -58,15 +58,18 @@ func _key(code: Key) -> InputEventKey:
 
 
 func _setup_input() -> void:
+	var mouse := InputEventMouseButton.new()
+	mouse.button_index = MOUSE_BUTTON_LEFT
+	mouse.device = -1
 	var map := {
 		"move_left": [KEY_A], "move_right": [KEY_D], "jump": [KEY_SPACE],
-		"aim_up": [KEY_UP], "aim_down": [KEY_DOWN], "aim_left": [KEY_LEFT], "aim_right": [KEY_RIGHT],
+		"fire": [mouse],
 		"restart": [KEY_R],
 	}
 	for action in map:
 		var events: Array = []
-		for k in map[action]:
-			events.append(_key(k))
+		for e in map[action]:
+			events.append(e if e is InputEvent else _key(e))
 		ProjectSettings.set_setting("input/" + action, {"deadzone": 0.2, "events": events})
 	ProjectSettings.save()
 	print("[build] 输入映射已写入 project.godot")
