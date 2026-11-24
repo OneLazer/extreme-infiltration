@@ -1,0 +1,14 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/enemies/flying_guard.gd" id="1_s"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_1"]
+size = Vector2(10, 10)
+
+[node name="FlyingGuard" type="Area2D"]
+collision_layer = 4
+collision_mask = 2
+script = ExtResource("1_s")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_1")
