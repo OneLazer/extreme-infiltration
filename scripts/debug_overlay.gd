@@ -7,7 +7,7 @@ extends Node
 
 @export_group("初始武器")
 @export var enabled := true                 ## 关闭后只显示信息，不改武器
-@export_enum("飞镖:0", "回旋镖:1", "重型回旋镖:2", "气枪:3")
+@export_enum("飞镖:0", "回旋镖:1", "重型回旋镖:2", "气枪:3", "刺剑:4")
 var initial_weapon: int:
 	get:
 		return _initial_weapon

@@ -176,12 +176,31 @@ WPN_ICONS = {   # 8×8 武器图标；颜色键：a 主色 b 亮 d 暗
     "boomerang": ["........", ".bbb....", ".baa....", ".a.a....", ".a..a...", "..d..aa.", "...dddb.", "........"],
     "heavy": ["bbbb....", "baaab...", "ba.daa..", "ba..dda.", ".ad..dab", "..ad.dab", "...aaaab", "....bbb."],
     "airgun": ["........", "..bbbbbb", ".baaaaab", "baaddddd", "ddda....", "..da....", "..dd....", "........"],
+    "rapier": [".......b", "......ba", ".....ba.", "....ba..", ".d.ba...", "..dd....", ".dad....", "d..d...."],
 }
 GUNS = {        # 手持武器，9×5，握把在 (1,3)
     "dart": [".........", "....bbbb.", ".ddaaaaab", ".dda.....", ".dd......"],
     "airgun": ["...bbbbb.", ".daaaaaab", "ddaddddda", ".dda.....", ".dd......"],
 }
+## 刺剑手持图：护手竖在 x=2，刀身沿握把那一行（y=3）伸出，c = 刀身（发光）
+RAPIER_HELD = [".........", "..b......", "..a......", "ddacccccc", "..a......"]
+
+
+def _rapier_held():
+    from pal import WPN
+    from px import sprite
+    blade = WPN["rapier"]
+    keys = {"a": N[6], "b": lerp(N[6], (255, 255, 255, 255), 0.35), "d": N[3], "c": blade}
+    s = sprite(RAPIER_HELD, keys)
+    emi = Cv(s.w, s.h)
+    for x in range(s.w):
+        if RAPIER_HELD[3][x] == "c":
+            emi.put(x, 3, blade)
+    PROPS["gun_rapier"] = (s, emi)
+
+
 def _wpn_sprites():
+    _rapier_held()
     from pal import WPN
     from px import sprite
     for name, rows in WPN_ICONS.items():

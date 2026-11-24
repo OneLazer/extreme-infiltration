@@ -16,7 +16,12 @@ extends RefCounted
 ##   recoil_dash —— 类似蔚蓝冲刺：锁定速度 dash_time 秒，忽略重力和输入，
 ##                  结束时速度乘 end_mult，若向上再乘 0.75（同 Celeste EndDashUpMult）
 
-enum Type { DART, BOOMERANG, HEAVY_BOOMERANG, AIR_GUN }
+enum Type { DART, BOOMERANG, HEAVY_BOOMERANG, AIR_GUN, RAPIER }
+
+## 刺剑（RAPIER）：向准心冲刺（复用反冲冲刺 apply_dash，方向取 +瞄准方向），
+##   thrust_speed × dash_time ≈ 冲刺距离；冲刺期间身体 + 刀身（blade_len × blade_width）扫掠击杀，
+##   对守卫无敌，结束后再无敌 invincible_grace 秒；高压电照样致死。
+##   空中只能刺 air_uses 次，落地或刺杀敌人后刷新。
 
 const DATA := {
 	Type.DART: {
@@ -51,6 +56,15 @@ const DATA := {
 		"assist_tiles": 3.0,       # 宽容判定带宽（图格）
 		"recoil_dash": 320.0, "dash_time": 0.12, "end_mult": 0.6,
 		"shake": 2.0, "shake_time": 0.22,
+	},
+	Type.RAPIER: {
+		"name": "刺剑", "color": Palette.RAPIER,
+		"thrust_speed": 320.0, "dash_time": 0.15, "end_mult": 0.6,   # 约 48px = 6 格
+		"blade_len": 12.0,         # 刀身伸出身体的长度（px）
+		"blade_width": 10.0,       # 扫掠判定宽度（px），比身体（6）宽，算作宽容判定
+		"invincible_grace": 0.05,  # 冲刺结束后额外无敌（秒）
+		"air_uses": 1,             # 空中可用次数
+		"shake": 1.5, "shake_time": 0.1,
 	},
 }
 

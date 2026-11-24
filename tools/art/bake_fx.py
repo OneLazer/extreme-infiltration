@@ -17,12 +17,16 @@ PAL = {
     "boomerang": ["#10331c", "#1f7a3d", "#3fd06a", "#8cf2a6", "#d9ffe3", "#ffffff"],
     "gold": ["#4a2a10", "#a8582a", "#f2a23d", "#ffd27a", "#fff1c2", "#ffffff"],
     "magenta": ["#3a1446", "#6e1f6a", "#b8327f", "#ff4f9a", "#ffa3cf", "#ffffff"],
+    "rapier": ["#1a1f3a", "#3d4a7a", "#7f8fc8", "#b9c6f0", "#e6ecff", "#ffffff"],
+    "electric": ["#1a0410", "#3a0716", "#7a1030", "#c81e4a", "#ff2a5a", "#ff8aa8", "#ffd6e0", "#ffffff"],
 }
 JOBS = [  # (效果, 配色, 输出名)
     *[("tiny-flare", k, "flare_" + k) for k in ("dart", "airgun", "heavy", "boomerang", "gold")],
     ("tiny-muzzle", "dart", "muzzle_dart"), ("tiny-muzzle", "airgun", "muzzle_airgun"),
     ("kill-burst", "gold", "kill_gold"), ("kill-burst", "magenta", "kill_magenta"),
     ("kill-burst", "dart", "kill_dart"),
+    ("tiny-flare", "rapier", "flare_rapier"), ("tiny-pierce", "rapier", "pierce_rapier"),
+    ("tiny-flare", "electric", "flare_electric"), ("tiny-zap", "electric", "zap_electric"),
 ]
 
 

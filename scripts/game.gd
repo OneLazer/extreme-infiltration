@@ -12,6 +12,8 @@ const TILE := 8.0           # 图格像素尺寸
 
 var player: Player
 var level: Level
+## 当前关卡的高压电层（ElectricLayer 在 _ready 里登记），没有则为 null
+var electric: TileMapLayer
 ## 瞄准冻结期间为 true。守卫、回旋镖等在冻结时暂停逻辑。
 var frozen := false
 
@@ -22,6 +24,26 @@ var _slow_scale := 1.0
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+
+
+## 某个点是否在高压电格里
+func is_electric(p: Vector2) -> bool:
+	if not is_instance_valid(electric):
+		return false
+	return electric.get_cell_source_id(electric.local_to_map(electric.to_local(p))) >= 0
+
+
+## 矩形（全局坐标）是否碰到任何高压电格
+func electric_overlaps(r: Rect2) -> bool:
+	if not is_instance_valid(electric) or r.size.x <= 0.0 or r.size.y <= 0.0:
+		return false
+	var a := electric.local_to_map(electric.to_local(r.position))
+	var b := electric.local_to_map(electric.to_local(r.end - Vector2(0.001, 0.001)))
+	for y in range(a.y, b.y + 1):
+		for x in range(a.x, b.x + 1):
+			if electric.get_cell_source_id(Vector2i(x, y)) >= 0:
+				return true
+	return false
 
 
 ## 顿帧：整个游戏停 sec 秒（命中、击杀的重量感）。重叠时取更晚的结束时刻。

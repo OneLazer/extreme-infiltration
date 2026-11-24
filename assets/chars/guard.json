@@ -15,6 +15,18 @@
    "count": 1,
    "fps": 1,
    "loop": false
+  },
+  "walk": {
+   "from": 5,
+   "count": 4,
+   "fps": 8,
+   "loop": true
+  },
+  "walk_aim": {
+   "from": 9,
+   "count": 4,
+   "fps": 10,
+   "loop": true
   }
  }
 }

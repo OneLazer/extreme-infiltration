@@ -8,6 +8,7 @@ uniform float aberration = 0.0;   // 屏幕边缘的色差偏移（像素）
 uniform float desat = 0.0;        // 0..1 去色（死亡）
 uniform float flash = 0.0;        // 0..1 闪白
 uniform float rewind = 0.0;       // 0..1 倒带干扰
+uniform float danger = 0.0;       // 0..1 守卫快开枪时屏幕边缘泛红
 uniform float vignette = 0.3;
 uniform float grain = 0.02;
 uniform float scanline = 0.07;    // 每个游戏像素行下 1/4 变暗的程度
@@ -47,6 +48,9 @@ void fragment() {
 		if (abs(row - track_y) < 1.5 && noise > 0.4) c += vec3(0.5) * rewind;  // 跟踪条噪点
 	}
 	c = mix(c, vec3(2.0), flash);
+	// 危险暗角：边缘压暗并染红，接近满条时轻微脉动
+	float edge = smoothstep(0.06, 0.42, r2) * danger * (0.85 + 0.15 * sin(time * 18.0));
+	c = mix(c, c * vec3(0.55, 0.2, 0.25) + vec3(0.32, 0.02, 0.06), edge * 0.75);
 	c *= 1.0 - vignette * smoothstep(0.1, 0.5, r2);
 	c *= 1.0 - scanline * step(0.75, fract(SCREEN_UV.y * canvas.y));
 	c += (hash(FRAGCOORD.xy + fract(time) * 97.0) - 0.5) * grain;

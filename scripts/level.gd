@@ -77,6 +77,12 @@ func complete() -> void:
 		PixelView.reload()
 
 
+## 左上武器栏下方的一行小提示（换主武器等），不挡视线
+func toast(text: String, col: Color) -> void:
+	if _hud:
+		_hud.toast(text, col)
+
+
 func _build_hud() -> void:
 	# HUD 挂在根视口（PixelView.hud_root），按窗口分辨率渲染；关卡销毁时一起删掉
 	_hud_layer = CanvasLayer.new()

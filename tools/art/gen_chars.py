@@ -117,12 +117,31 @@ GUARD_AIM = GUARD[:6] + [
 ] + GUARD[11:]
 
 
+# 走路腿（替换 GUARD 最后 4 行）：接触 → 过渡 → 接触（换腿）→ 过渡
+GUARD_LEGS_WALK = [
+    ["...aAB...aAB....", "..aAB.....aAB...", "..aaa.....aaa...", ".oooo.....oooo.."],
+    ["....aAB.aAB.....", "....aAB.aAB.....", ".....aaaaaa.....", "....oooooooo...."],
+    ["....aAB..aAB....", "...aAB....aAB...", "...aaa.....aaa..", "..oooo.....oooo."],
+    [".....aABaAB.....", ".....aABaAB.....", ".....aaaaaa.....", "....oooooooo...."],
+]
+
+
+def _walk(top, legs, bob):
+    if bob:   # 过渡帧上半身抬 1px（两腿并拢时身体最高），髋部那一行复制一次补缝
+        return top[1:12] + [top[11]] + legs
+    return top[:12] + legs
+
+
 def guard_frames():
     alert = dict(GD, v=GD["r"], V=GD["R"])
     breath = ["................"] + GUARD[:-5] + GUARD[-4:]   # 上半身下沉 1px
+    walk = [sprite(_walk(GUARD, l, i % 2 == 1), GD) for i, l in enumerate(GUARD_LEGS_WALK)]
+    walk_aim = [sprite(_walk(GUARD_AIM, l, i % 2 == 1), alert) for i, l in enumerate(GUARD_LEGS_WALK)]
     return {
         "idle": ([sprite(GUARD, GD), sprite(GUARD, GD), sprite(breath, GD), sprite(breath, GD)], 3, True),
         "alert": ([sprite(GUARD_AIM, alert)], 1, False),
+        "walk": (walk, 8, True),          # 游荡 / 搜索
+        "walk_aim": (walk_aim, 10, True), # 追击：举枪走
     }
 
 

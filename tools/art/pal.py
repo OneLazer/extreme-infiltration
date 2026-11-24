@@ -47,8 +47,9 @@ DR = {
 # 武器色（与 weapon_defs 对应，基色 0..1，Godot 里再乘亮度发光）
 WPN = {
     "dart": hx("#5ff2f2"), "boomerang": hx("#6cf28a"),
-    "heavy": hx("#a98cff"), "airgun": hx("#ffa64a"),
+    "heavy": hx("#a98cff"), "airgun": hx("#ffa64a"), "rapier": hx("#e6ecff"),
 }
+ELECTRIC = hx("#ff2a5a")   # 高压电（Godot 里 Palette.ELECTRIC 用 HDR 版本）
 EXIT_GREEN = hx("#4dff8a")
 ALERT = hx("#ff2a3d")
 CLEAR = (0, 0, 0, 0)

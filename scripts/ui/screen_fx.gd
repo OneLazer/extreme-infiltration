@@ -24,6 +24,8 @@ var _wipe_p := 1.0
 var _wipe_target := 1.0
 var _wipe_speed := 3.2
 var _last := 0.0
+var _danger := 0.0          # 屏幕边缘红色危险暗角（平滑后的值）
+var _danger_req := 0.0      # 本帧守卫上报的最大值，每帧清零
 
 
 func _ready() -> void:
@@ -61,6 +63,11 @@ func _process(_delta: float) -> void:
 	_ab = move_toward(_ab, 0.0, dt * 10.0)
 	_flash = move_toward(_flash, 0.0, dt * 8.0)
 	_wipe_p = move_toward(_wipe_p, _wipe_target, dt * _wipe_speed)
+	# 危险暗角：涨得快、退得慢，避免掩体边缘来回闪
+	var rate := 6.0 if _danger_req > _danger else 2.5
+	_danger = move_toward(_danger, _danger_req, dt * rate)
+	_danger_req = 0.0
+	_post.set_shader_parameter("danger", _danger)
 	_post_rect.visible = enabled
 	_post.set_shader_parameter("aberration", base_aberration + _ab)
 	_post.set_shader_parameter("flash", _flash)
@@ -79,6 +86,11 @@ func pulse(k := 2.0) -> void:
 
 func flash(k := 0.5) -> void:
 	_flash = maxf(_flash, k)
+
+
+## 守卫警戒条过半后每帧上报 0..1，屏幕边缘泛红；取当帧最危险的那个
+func danger(k: float) -> void:
+	_danger_req = maxf(_danger_req, clampf(k, 0.0, 1.0))
 
 
 ## 新关卡开始：从左往右揭开；去色和倒带清零

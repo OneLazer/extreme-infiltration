@@ -34,6 +34,7 @@ var _was_dashing := false
 var _scarf: PackedVector2Array = []
 var _scarf_prev: PackedVector2Array = []
 var _t := 0.0
+var _blade_t := 0.0             # 刺剑出刺后经过的时间（刀身弹出动画）
 
 
 func _ready() -> void:
@@ -59,10 +60,14 @@ func _ready() -> void:
 	_p.thrown.connect(_on_thrown)
 	_p.teleported.connect(_on_teleported)
 	_p.died.connect(_on_died)
+	_p.thrust.connect(_on_thrust)
+	_p.thrust_hit.connect(_on_thrust_hit)
+	_p.thrust_ended.connect(_on_thrust_ended)
 func _process(delta: float) -> void:
 	if _p.dead:
 		return
 	_t += delta
+	_blade_t += delta
 	var on_floor := _p.is_on_floor()
 	var v := _p.velocity
 	var dashing := _p._dash_timer > 0.0
@@ -122,7 +127,11 @@ func _update_gun(delta: float) -> void:
 		WeaponDefs.Type.HEAVY_BOOMERANG:
 			key = "icon_heavy"
 			grip = Vector2(2, 5)
-	_gun.visible = not is_instance_valid(_p.active_boomerang)
+		WeaponDefs.Type.RAPIER:
+			key = "gun_rapier"
+	# 刺剑出刺时手里的刀换成运行时画的长刀身（见 _draw_blade）；空中用掉次数后刀身变暗
+	_gun.visible = not is_instance_valid(_p.active_boomerang) and not _p.is_rapier_attacking()
+	_gun.modulate = Color(0.45, 0.45, 0.55) if w == WeaponDefs.Type.RAPIER and not _p.rapier_ready() else Color.WHITE
 	_gun.region_rect = Prop.rect_of(key)
 	var ang := snappedf(_p._aim_dir.angle(), PI / 8.0)   # 16 向，减少像素旋转的锯齿
 	var left := cos(ang) < 0.0
@@ -153,6 +162,8 @@ func _update_trail(delta: float, dashing: bool, v: Vector2) -> void:
 		return
 	_ghost_t = ghost_interval
 	var col := Palette.SCARF if int(_t / ghost_interval) % 2 == 0 else Palette.DART
+	if _p.is_rapier_attacking():
+		col = Palette.RAPIER if int(_t / ghost_interval) % 2 == 0 else Palette.SCARF
 	Juice.ghost(_body.global_position, SIL, _body.region_rect, _body.offset, _body.flip_h, _body.scale, col)
 
 
@@ -205,6 +216,31 @@ func _draw() -> void:
 		if i < 3:
 			draw_line(a + Vector2(0, 1), b + Vector2(0, 1), shade, 1.0)
 		draw_line(a, b, col, 1.0)
+	if _p.is_rapier_attacking():
+		_draw_blade()
+
+
+## 刺剑刀身：出刺头两帧从 6px 弹出到全长（略微过冲），白芯 + 银边，刀尖一颗星点。
+## 冲刺方向是 8 向吸附或连续角度，线段用 1px 画，像素旋转的锯齿不明显。
+func _draw_blade() -> void:
+	var def := WeaponDefs.get_def(WeaponDefs.Type.RAPIER)
+	var d := _p.rapier_dir()
+	var k := clampf(_blade_t / 0.035, 0.0, 1.0)
+	var over := 1.0 + 0.25 * sin(clampf(_blade_t / 0.08, 0.0, 1.0) * PI)   # 弹出时过冲一下
+	var length := lerpf(6.0, float(def["blade_len"]) + 3.0, k) * over
+	var root := Vector2(0, FEET - 7.0) + d * 2.0
+	var tip := root + d * length
+	var side := Vector2(-d.y, d.x)
+	draw_line(root + side, tip - d * 3.0 + side, Palette.RAPIER * Color(0.35, 0.35, 0.45), 1.0)
+	draw_line(root, tip, Palette.RAPIER, 1.0)
+	draw_line(root, root + d * length * 0.55, Color(3.0, 3.0, 3.2), 1.0)
+	# 护手：垂直刀身的一小截
+	draw_line(root - side * 2.0, root + side * 2.0, Palette.N6, 1.0)
+	var tp := tip.round()
+	var g := Color(3.2, 3.2, 3.4) if fmod(_t, 0.06) < 0.03 else Palette.RAPIER
+	draw_rect(Rect2(tp, Vector2.ONE), g)
+	for v in [Vector2.LEFT, Vector2.RIGHT, Vector2.UP, Vector2.DOWN]:
+		draw_rect(Rect2(tp + v, Vector2.ONE), Palette.RAPIER * Color(0.5, 0.5, 0.6))
 
 
 # ======================= 事件特效 =======================
@@ -307,9 +343,55 @@ func _on_teleported(from: Vector2, to: Vector2) -> void:
 	_scale = Vector2(1.4, 0.65) if absf(d.x) > absf(d.y) else Vector2(0.65, 1.4)
 
 
+## 刺剑出刺：起手银白闪光 + 身后一圈小冲击 + 反方向的尘，镜头往刺的方向推一下
+func _on_thrust(dir: Vector2) -> void:
+	_blade_t = 0.0
+	_shot_face_t = 0.2
+	if absf(dir.x) > 0.1:
+		_face = 1 if dir.x > 0.0 else -1
+	var at := _p.global_position + Vector2(0, -1)
+	Juice.flash(at + dir * 4.0, "flare_rapier", dir.angle(), Color(1.6, 1.6, 1.7))
+	Juice.ring(at - dir * 3.0, 6.0, Palette.RAPIER * Color(0.6, 0.6, 0.6), 0.14)
+	if _p.is_on_floor():
+		Juice.dust(_feet(), 4, -dir, 40.0, 1.5)
+	var cam := _p.get_node_or_null("Camera2D")
+	if cam:
+		cam.kick(dir * 2.0)
+	_ghost_t = 0.0
+
+
+## 刺中：穿刺星芒沿刺的方向、穿透线、电光火花，额外 0.04s 顿帧叠在击杀顿帧上
+func _on_thrust_hit(at: Vector2, dir: Vector2) -> void:
+	Juice.flash(at, "pierce_rapier", dir.angle(), Color(1.7, 1.7, 1.8))
+	Juice.trace(at - dir * 10.0, at + dir * 16.0, Palette.RAPIER, 1.0, 0.12)
+	Juice.sparks(at, 8, dir, 0.5, 220.0, Palette.RAPIER)
+	Game.hitstop(0.04)
+	ScreenFx.pulse(2.0)
+
+
+## 冲刺结束：刀身收回时尖端闪一下，起点到终点留一道渐隐的刺痕
+func _on_thrust_ended(from: Vector2, to: Vector2) -> void:
+	var d := _p.rapier_dir()
+	if from.distance_to(to) > 6.0:
+		Juice.trace(from, to, Palette.RAPIER * Color(0.5, 0.5, 0.6), 1.0, 0.16)
+	Juice.glints(to + d * 12.0, 3, Palette.RAPIER, 4.0)
+
+
 func _on_died() -> void:
 	var at := _p.global_position
+	if _p.death_cause == "electric":
+		_electric_death(at)
+		return
 	Juice.flash(at, "kill_magenta", 0.0, Color(1.5, 1.5, 1.5))
 	Juice.debris(at, 10, Vector2.UP, [Color("#e4e0f5"), Color("#a7a1d0"), Color("#2a2250"), Palette.P3], 130.0, Color.WHITE)
 	Juice.sparks(at, 10, Vector2.UP, PI, 150.0, Palette.SCARF)
 	Juice.ring(at, 14.0, Palette.SCARF, 0.3)
+
+
+## 被高压电电死：剪影红白交替闪、电弧炸开、围巾色碎片少一些，屏幕闪一下
+func _electric_death(at: Vector2) -> void:
+	ElectricFx.zap(_body.global_position, {"tex": SIL, "region": _body.region_rect,
+		"offset": _body.offset, "flip": _body.flip_h}, at)
+	Juice.debris(at, 6, Vector2.UP, [Color("#e4e0f5"), Color("#2a2250"), Palette.P3], 110.0, Color.WHITE)
+	ScreenFx.flash(0.35)
+	ScreenFx.pulse(3.0)

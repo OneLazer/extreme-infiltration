@@ -4,12 +4,22 @@ extends Control
 ## 画在根视口（按窗口分辨率渲染），坐标仍是 320×180 画布单位：图标一格 = 一个游戏像素，文字半格。
 
 const PROPS := preload("res://assets/props/props.png")
-const ICON := {0: "icon_dart", 1: "icon_boomerang", 2: "icon_heavy", 3: "icon_airgun"}
+const ICON := {0: "icon_dart", 1: "icon_boomerang", 2: "icon_heavy", 3: "icon_airgun", 4: "icon_rapier"}
 
 var level: Level
 var _t := 0.0
 var _flash := 0.0          # 武器变化时当前格闪一下
 var _last_sig := ""
+var _toast := ""
+var _toast_col := Color.WHITE
+var _toast_t := 0.0        # 剩余显示时间（秒）
+
+
+## 武器栏下方弹出一行小字：滑入、停留、淡出
+func toast(text: String, col: Color) -> void:
+	_toast = text
+	_toast_col = col
+	_toast_t = 1.6
 
 
 func _ready() -> void:
@@ -20,6 +30,7 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	_t += delta
 	_flash = maxf(_flash - delta * 4.0, 0.0)
+	_toast_t = maxf(_toast_t - delta, 0.0)
 	queue_redraw()
 
 
@@ -60,6 +71,22 @@ func _draw() -> void:
 	_text_num(str(gl), Vector2(r.position.x + 15, 10), Palette.W3 if gl > 0 else Color(0.4, 2.0, 0.7))
 	var tm := level.time
 	_text_num("%02d:%04.1f" % [int(tm / 60.0), fmod(tm, 60.0)], Vector2(r.position.x + 30, 10), Palette.C3)
+	_draw_toast()
+
+
+func _draw_toast() -> void:
+	if _toast_t <= 0.0:
+		return
+	var age := 1.6 - _toast_t
+	var slide := (1.0 - clampf(age / 0.12, 0.0, 1.0)) * -12.0      # 0.12s 从左滑入
+	var a := clampf(_toast_t / 0.3, 0.0, 1.0)                       # 最后 0.3s 淡出
+	var w := UiFonts.text().get_string_size(_toast, HORIZONTAL_ALIGNMENT_LEFT, -1, 6).x
+	var at := Vector2(slide, 18)
+	draw_rect(Rect2(at, Vector2(w + 8, 9)), Color(Palette.N0, 0.72 * a))
+	draw_rect(Rect2(at, Vector2(1, 9)), Color(_toast_col, a))
+	var k := 1.0 + maxf(0.0, 0.3 - age) * 3.0                        # 刚出现时文字亮一下
+	draw_string(UiFonts.text(), at + Vector2(4, 7), _toast, HORIZONTAL_ALIGNMENT_LEFT, -1, 6,
+		Color(Palette.C4.r * k, Palette.C4.g * k, Palette.C4.b * k, a))
 
 
 ## 半透明暗底条 + 下沿青色细线；right=true 时斜角在左边

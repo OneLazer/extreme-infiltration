@@ -3,12 +3,12 @@ extends Area2D
 ## 武器拾取点。玩家碰到后加入武器队列末尾（先进先出），本关内不刷新。
 ## 表现：悬浮的全息展示框（四角括号 + 武器图标 + 扫描线 + 弹药角标），拾取时一圈冲击环。
 
-@export_enum("回旋镖:1", "重型回旋镖:2", "气枪:3") var weapon_type := 1
+@export_enum("回旋镖:1", "重型回旋镖:2", "气枪:3", "刺剑:4") var weapon_type := 1
 @export var ammo := 3
 
 const PROPS := preload("res://assets/props/props.png")
-const ICON := {1: "icon_boomerang", 2: "icon_heavy", 3: "icon_airgun"}
-const FLARE := {1: "flare_boomerang", 2: "flare_heavy", 3: "flare_airgun"}
+const ICON := {1: "icon_boomerang", 2: "icon_heavy", 3: "icon_airgun", 4: "icon_rapier"}
+const FLARE := {1: "flare_boomerang", 2: "flare_heavy", 3: "flare_airgun", 4: "flare_rapier"}
 
 var _t := 0.0
 
