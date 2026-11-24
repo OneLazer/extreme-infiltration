@@ -29,9 +29,9 @@ signal weapons_changed
 
 # ---------------- 冲刺跳（武器反冲期间按跳打断） ----------------
 @export_group("冲刺跳")
-@export var super_boost := 1.10          ## super：水平冲刺接跳，水平动量加成
-@export var hyper_boost := 1.40          ## hyper：下斜冲刺接跳，水平动量加成更大
-@export var wall_bounce_v := -10.0      ## 蹭墙跳垂直初速
+@export var super_speed := 260.0         ## super：水平冲刺接跳的固定水平速度
+@export var hyper_speed := 340.0         ## hyper：下斜冲刺接跳的固定水平速度
+@export var wall_bounce_v := -200.0      ## 蹭墙跳垂直初速
 @export var wall_bounce_h := 160.0       ## 蹭墙跳离开墙面的水平速度
 
 # ---------------- 武器参数 ----------------
@@ -244,19 +244,19 @@ func _try_dash_jump(on_ground: bool) -> bool:
 	return false
 
 
-## super：水平冲刺接跳，保留冲刺水平动量并小幅加成
+## super：水平冲刺接跳，水平速度固定为 super_speed（方向取冲刺方向）
 func _dash_super_jump() -> void:
 	_break_dash()
-	velocity.x = _dash_velocity.x * super_boost
+	velocity.x = signf(_dash_velocity.x) * super_speed
 	velocity.y = jump_speed
 	_var_jump_timer = var_jump_time
 	_var_jump_speed = velocity.y
 
 
-## hyper：下斜冲刺接跳，水平加成更大
+## hyper：下斜冲刺接跳，水平速度固定为 hyper_speed
 func _dash_hyper_jump() -> void:
 	_break_dash()
-	velocity.x = _dash_velocity.x * hyper_boost
+	velocity.x = signf(_dash_velocity.x) * hyper_speed
 	velocity.y = jump_speed
 	_var_jump_timer = var_jump_time
 	_var_jump_speed = velocity.y
