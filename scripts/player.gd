@@ -213,8 +213,13 @@ func _upward_corner_correction(delta: float) -> void:
 	if velocity.y >= 0.0:
 		return
 	var motion := Vector2(0.0, velocity.y * delta)
-	if not test_move(global_transform, motion): 		return
-	var order: Array[int] = [1, -1] if velocity.x >= 0.0 else [-1, 1]
+	if not test_move(global_transform, motion):
+		return
+	# 注意：不要写成 `[1, -1] if ... else [-1, 1]`——三元结果是无类型 Array，
+	# 赋给 Array[int] 会在运行时抛类型转换错误。
+	var order: Array[int] = [1, -1]
+	if velocity.x < 0.0:
+		order.reverse()
 	for i in range(1, upward_corner_correction + 1):
 		for s in order:
 			var off := Vector2(i * s, 0.0)
