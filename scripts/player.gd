@@ -538,11 +538,18 @@ func _fire_dart(dir: Vector2, def: Dictionary) -> void:
 		velocity = Vector2.ZERO
 	if enemy == null:
 		_apply_dart_impact(res["normal"], def)
+	else:
+		# 打中敌人时按「按键方向」套用同一套收尾手感：
+		# 上下 → 当成撞地板；横向 / 斜向 → 当成撞竖墙（反向 X 取弹道 X 的反方向）
+		var fake_normal := Vector2(-signf(dir.x), 0.0)
+		if absf(dir.x) <= 0.01:
+			fake_normal = Vector2(0.0, -1.0)
+		_apply_dart_impact(fake_normal, def)
 	_dash_timer = 0.0
 	_var_jump_timer = 0.0
 
 
-## 飞镖撞墙的收尾手感（打到敌人不触发）：
+## 飞镖收尾速度（撞墙与命中敌人共用，敌人用一个等价法线喂进来）：
 ##   竖直墙 → 沿墙面法线反推一个很小的 X 速度，并给一点向上的 Y
 ##   地板   → 只给一点向上的 Y
 ##   天花板 → 不变
