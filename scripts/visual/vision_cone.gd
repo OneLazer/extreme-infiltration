@@ -34,13 +34,15 @@ func _draw() -> void:
 	var base: Color = [Palette.VISION, Palette.VISION_SEARCH, Palette.VISION_ALERT][mode]
 	if pts.size() >= 3:
 		var eye := pts[0]
-		var e := _k(base, edge)
+		# 全向一圈面积大，几架无人机叠在一起会很吵：边线和底色减半
+		var full := _g.cone_full()
+		var e := _k(base, edge * (0.5 if full else 1.0))
 		# 逐个三角形填充：一整圈时首尾两条射线重合，整体多边形三角化会失败
-		var fc := _k(base, fill)
+		var fc := _k(base, fill * (0.6 if full else 1.0))
 		for i in range(1, pts.size() - 1):
 			draw_colored_polygon(PackedVector2Array([eye, pts[i], pts[i + 1]]), fc)
 		draw_polyline(pts.slice(1), e, 1.0)
-		if not _g.cone_full():
+		if not full:
 			draw_line(eye, pts[1], e, 1.0)
 			draw_line(eye, pts[pts.size() - 1], e, 1.0)
 		_draw_scan(pts, base)

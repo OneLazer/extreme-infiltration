@@ -12,6 +12,7 @@ collision_mask = 2
 script = ExtResource("1_s")
 view_range = 48.0
 view_half_angle = 180.0
+search_view_mult = 1.25
 cone_rays = 48
 alert_fill_time = 1.5
 wander_tiles = Vector2i(5, 5)

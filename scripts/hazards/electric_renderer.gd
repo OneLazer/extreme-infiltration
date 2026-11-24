@@ -208,37 +208,45 @@ func _ambient_sparks(view: Rect2) -> void:
 		return
 	Juice.sparks(to_global(pts[k]), 1 + int(_discharge * 2.0), l["nrm"][k], 0.8, 70.0, Palette.ELECTRIC)
 
-## 放电：整片亮一下，2~4 条大电弧横穿区域内部（两端都在边缘上，中间不出电块），两端溅火花
+## 放电：整片亮一下，2~4 条大电弧横穿区域内部，两端溅火花。
+## 电弧起点取画面里的边缘采样点，沿内法线（随机偏转 ±75°）穿过电块，到对面边缘为止，
+## 所以细长的电柱、电带也能横穿，不会画到电块外面。
 func _start_discharge() -> void:
 	_discharge = 1.0
 	_rejitter()
 	var view := _view_rect()
+	var cands: Array = []          # 画面里的采样点 [点, 法线]
+	for l in _loops:
+		var pts: PackedVector2Array = l["pts"]
+		for k in pts.size():
+			if view.has_point(pts[k]):
+				cands.append([pts[k], l["nrm"][k]])
+	if cands.is_empty():
+		return
 	var want := _rng.randi_range(2, 4)
-	for attempt in 24:
+	for attempt in 16:
 		if want <= 0:
 			break
-		var la: Dictionary = _loops[_rng.randi() % _loops.size()]
-		var lb: Dictionary = _loops[_rng.randi() % _loops.size()]
-		var a: Vector2 = la["pts"][_rng.randi() % (la["pts"] as PackedVector2Array).size()]
-		var b: Vector2 = lb["pts"][_rng.randi() % (lb["pts"] as PackedVector2Array).size()]
-		var d := a.distance_to(b)
-		if d < 20.0 or d > 110.0 or not _inside_between(a, b):
+		var c: Array = cands[_rng.randi() % cands.size()]
+		var a: Vector2 = c[0]
+		var dir: Vector2 = (-(c[1] as Vector2)).rotated(_rng.randf_range(-1.3, 1.3))
+		var b := _cross(a, dir)
+		if a.distance_to(b) < 10.0:
 			continue
 		want -= 1
 		_bolts.append({"a": a, "b": b, "life": _rng.randf_range(0.12, 0.22)})
-		if view.has_point(a) or view.has_point(b):
-			Juice.sparks(to_global(a), 3, (a - b), 0.6, 110.0, Palette.ELECTRIC)
-			Juice.sparks(to_global(b), 3, (b - a), 0.6, 110.0, Palette.ELECTRIC)
+		Juice.sparks(to_global(a), 3, -dir, 0.7, 110.0, Palette.ELECTRIC)
+		Juice.sparks(to_global(b), 3, dir, 0.7, 110.0, Palette.ELECTRIC)
 
 
-## a→b 中间每 3px 采样都要落在电格里（端点在边缘上，不算）
-func _inside_between(a: Vector2, b: Vector2) -> bool:
-	var n := int(a.distance_to(b) / 3.0)
-	for i in range(1, n):
-		var p := a.lerp(b, float(i) / n)
-		if not _is_cell(_layer.local_to_map(p)):
-			return false
-	return true
+## 从边缘点 a 沿 dir 往电块里走，直到走出电块（最多 120px），返回出口点
+func _cross(a: Vector2, dir: Vector2) -> Vector2:
+	var p := a + dir * 1.5
+	var d := 1.5
+	while d < 120.0 and _is_cell(_layer.local_to_map(p)):
+		d += 2.0
+		p = a + dir * d
+	return a + dir * (d - 1.0)
 
 
 ## 玩家靠近：最近的边缘朝玩家伸出小电弧（不碰到玩家），越近越频繁
@@ -281,7 +289,7 @@ func _loop_line(l: Dictionary, jit: PackedFloat32Array, base: int) -> PackedVect
 func _draw() -> void:
 	if _layer == null:
 		return
-	var k := 1.0 + _discharge * 0.8
+	var k := 1.0 + _discharge * 1.4
 	var halo_c := Palette.ELECTRIC * Color(0.42 * k, 0.42 * k, 0.42 * k)
 	var core_c := Palette.ELECTRIC * Color(k, k, k)
 	var base := 0

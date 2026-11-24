@@ -72,6 +72,46 @@ func _draw() -> void:
 	var tm := level.time
 	_text_num("%02d:%04.1f" % [int(tm / 60.0), fmod(tm, 60.0)], Vector2(r.position.x + 30, 10), Palette.C3)
 	_draw_toast()
+	_draw_threats()
+
+
+## 屏外威胁：锁定玩家的守卫在画面外时，屏幕边缘对应方向画一个小箭头 + 警戒进度，
+## 快满时闪烁。锁定视线不限距离，不提示的话会被看不见的守卫打死。
+func _draw_threats() -> void:
+	var xf := PixelView.view.get_canvas_transform()
+	var screen := Rect2(0, 0, 320, 180)
+	for n in get_tree().get_nodes_in_group("enemies"):
+		var g := n as Guard
+		if g == null or g.dead or not g.is_locked():
+			continue
+		var sp: Vector2 = xf * g.global_position
+		if screen.grow(-2.0).has_point(sp):
+			continue
+		var center := Vector2(160, 90)
+		var dir := (sp - center).normalized()
+		# 沿方向射到内缩 9px 的屏幕框上
+		var inner := screen.grow(-9.0)
+		var tx := (inner.size.x * 0.5) / maxf(absf(dir.x), 0.001)
+		var ty := (inner.size.y * 0.5) / maxf(absf(dir.y), 0.001)
+		var at := (center + dir * minf(tx, ty)).round()
+		var hot := g.alert > 0.75
+		var blink := 1.0 if not hot or fmod(_t, 0.14) < 0.08 else 0.4
+		var c: Color = Palette.GUARD.lerp(Palette.ALERT, g.alert) * Color(blink, blink, blink)
+		_arrow(at, dir, c)
+		# 进度：箭头后面一条 7px 的短条
+		var side := Vector2(-dir.y, dir.x)
+		var base := at - dir * 5.0 - side * 3.0
+		for i in 7:
+			var on := float(i) / 7.0 < g.alert
+			draw_rect(Rect2((base + side * i).round(), Vector2.ONE), c if on else Color(0.2, 0.05, 0.08, 0.8))
+
+
+## 指向 dir 的 5px 小箭头（尖端在 at）
+func _arrow(at: Vector2, dir: Vector2, c: Color) -> void:
+	var side := Vector2(-dir.y, dir.x)
+	for k in 4:
+		for s in range(-k, k + 1):
+			draw_rect(Rect2((at - dir * k + side * s * 0.75).round(), Vector2.ONE), c)
 
 
 func _draw_toast() -> void:
