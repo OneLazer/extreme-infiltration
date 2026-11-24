@@ -140,7 +140,7 @@ func _update_movement(delta: float) -> void:
 		_move_x = _force_move_x
 
 	if _dash_timer > 0.0:
-		if not _try_dash_jump():
+		if not _try_dash_jump(on_ground):
 			# 武器反冲锁定中：忽略重力与输入
 			velocity = _dash_velocity
 			_dash_timer -= delta
@@ -216,18 +216,22 @@ func _wall_jump(dir: int) -> void:
 	facing = dir
 
 
-## 冲刺中按跳：朝墙冲 → 蹭墙跳，否则按冲刺方向区分 super / hyper。
+## 冲刺中按跳：贴墙 → 蹭墙跳，否则按冲刺方向区分 super / hyper。
+## 蹭墙跳只看「离地 + 贴着墙」，不要求冲刺朝着墙，所以垂直上冲沿墙也能弹；
+## 地面上的撞墙冲刺不抢跳，交给 super。
 ## 返回 true 表示冲刺已被跳跃打断。
-func _try_dash_jump() -> bool:
+func _try_dash_jump(on_ground: bool) -> bool:
 	if _jump_buffer_timer <= 0.0:
 		return false
-	# 蹭墙跳：冲刺方向正朝着墙（不要求在地面，空中贴墙也能弹）
-	if _dash_velocity.x > 0.1 and _wall_check(1, wall_jump_check_dist):
-		_dash_wall_bounce(1)
-		return true
-	if _dash_velocity.x < -0.1 and _wall_check(-1, wall_jump_check_dist):
-		_dash_wall_bounce(-1)
-		return true
+	if not on_ground:
+		var face := _move_x if _move_x != 0 else facing
+		for d in [face, -face]:
+			if not _wall_check(d, wall_jump_check_dist):
+				continue
+			if _dash_velocity.x * d < -0.1:   # 正在朝远离这面墙的方向冲
+				continue
+			_dash_wall_bounce(d)
+			return true
 	# super / hyper 需要地面或土狼时间
 	if _jump_grace_timer <= 0.0:
 		return false
@@ -265,7 +269,7 @@ func _dash_wall_bounce(wall_dir: int) -> void:
 		_force_move_x = -wall_dir
 		_force_move_x_timer = wall_jump_force_time
 	velocity.x = -wall_dir * wall_bounce_h
-	velocity.y = wall_bounce_v
+	velocity.y = minf(_dash_velocity.y, wall_bounce_v)   # 上冲贴墙时保留原有上升速度
 	_var_jump_timer = var_jump_time
 	_var_jump_speed = velocity.y
 	facing = -wall_dir
