@@ -48,7 +48,7 @@ var _dash_velocity := Vector2.ZERO
 var _dash_end_mult := 1.0
 
 ## 已拾取武器队列（先进先出）。元素：{"type": WeaponDefs.Type, "ammo": int}
-## 队列为空时使用默认武器飞镖（无限）。
+## 队列为空时使用初始武器回旋镖（无限）。
 var weapon_queue: Array[Dictionary] = []
 var active_boomerang: Boomerang = null
 
@@ -253,7 +253,7 @@ func _just_pressed_aim() -> Vector2:
 
 
 func current_weapon() -> int:
-	return weapon_queue[0]["type"] if not weapon_queue.is_empty() else WeaponDefs.Type.DART
+	return weapon_queue[0]["type"] if not weapon_queue.is_empty() else WeaponDefs.Type.BOOMERANG
 
 
 func _can_fire() -> bool:
