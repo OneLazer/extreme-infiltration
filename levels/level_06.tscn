@@ -1,0 +1,302 @@
+[gd_scene format=4]
+
+[ext_resource type="Script" path="res://scripts/level.gd" id="1_1q5uq"]
+[ext_resource type="PackedScene" path="res://scenes/art/street_backdrop.tscn" id="2_6vgds"]
+[ext_resource type="Script" path="res://scripts/art/back_wall.gd" id="3_fuywf"]
+[ext_resource type="Script" path="res://scripts/art/prop.gd" id="4_16tge"]
+[ext_resource type="Script" path="res://scripts/art/glow_spot.gd" id="5_1nphh"]
+[ext_resource type="Script" path="res://scripts/art/light_cone.gd" id="6_ciyj4"]
+[ext_resource type="TileSet" path="res://assets/tiles/street_tileset.tres" id="7_88ktw"]
+[ext_resource type="TileSet" path="res://assets/tiles/electric_tileset.tres" id="8_thh07"]
+[ext_resource type="Script" path="res://scripts/hazards/electric_layer.gd" id="9_ivanv"]
+[ext_resource type="PackedScene" path="res://scenes/camera_guard.tscn" id="10_8td5s"]
+[ext_resource type="Script" path="res://scripts/enemies/camera_guard.gd" id="11_0tfsk"]
+[ext_resource type="PackedScene" path="res://scenes/timer_gate.tscn" id="12_gpcmx"]
+[ext_resource type="Script" path="res://scripts/timer_gate.gd" id="13_b5k1s"]
+[ext_resource type="PackedScene" path="res://scenes/weapon_zone.tscn" id="14_7bnun"]
+[ext_resource type="Script" path="res://scripts/weapon_zone.gd" id="15_qrupw"]
+[ext_resource type="PackedScene" path="res://scenes/ground_guard.tscn" id="16_7o3qy"]
+[ext_resource type="Script" path="res://scripts/enemies/ground_guard.gd" id="17_7lfl5"]
+[ext_resource type="PackedScene" path="res://scenes/exit.tscn" id="18_y27tq"]
+[ext_resource type="Script" path="res://scripts/exit.gd" id="19_4yo83"]
+[ext_resource type="PackedScene" path="res://scenes/player.tscn" id="20_l6lqw"]
+[ext_resource type="Script" path="res://scripts/player.gd" id="21_lvuwt"]
+
+[sub_resource type="Environment" id="Environment_j4jic"]
+background_mode = 3
+glow_enabled = true
+glow_intensity = 0.9
+glow_bloom = 0.05
+glow_blend_mode = 0
+
+[node name="Level06" type="Node2D" unique_id=1412465800]
+script = ExtResource("1_1q5uq")
+initial_weapon = 3
+allow_double_jump = false
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=309460]
+environment = SubResource("Environment_j4jic")
+
+[node name="Backdrop" parent="." unique_id=1557108750 instance=ExtResource("2_6vgds")]
+
+[node name="BackWall" type="Node2D" parent="." unique_id=1961685751]
+script = ExtResource("3_fuywf")
+
+[node name="Decor" type="Node2D" parent="." unique_id=526880311]
+
+[node name="Cooler" type="Sprite2D" parent="Decor" unique_id=1155192177]
+position = Vector2(17, 168)
+script = ExtResource("4_16tge")
+prop_name = "cooler"
+
+[node name="Plant" type="Sprite2D" parent="Decor" unique_id=1323270408]
+position = Vector2(47, 168)
+script = ExtResource("4_16tge")
+prop_name = "plant"
+
+[node name="Server" type="Sprite2D" parent="Decor" unique_id=738364123]
+position = Vector2(90, 168)
+script = ExtResource("4_16tge")
+prop_name = "server"
+glow = 1.7
+flicker = 2
+
+[node name="Server2" type="Sprite2D" parent="Decor" unique_id=866703509]
+position = Vector2(103, 168)
+script = ExtResource("4_16tge")
+prop_name = "server"
+glow = 1.7
+flicker = 2
+
+[node name="Glow" type="Node2D" parent="Decor" unique_id=1393292919]
+position = Vector2(96, 156)
+script = ExtResource("5_1nphh")
+radius = 16.0
+color = Color(0.56078434, 0.8901961, 1, 1)
+strength = 0.08
+
+[node name="Desk" type="Sprite2D" parent="Decor" unique_id=117574510]
+position = Vector2(158, 168)
+script = ExtResource("4_16tge")
+
+[node name="Chair" type="Sprite2D" parent="Decor" unique_id=544604636]
+position = Vector2(175, 168)
+script = ExtResource("4_16tge")
+prop_name = "chair"
+
+[node name="Glow2" type="Node2D" parent="Decor" unique_id=6146384]
+position = Vector2(158, 157)
+script = ExtResource("5_1nphh")
+radius = 14.0
+color = Color(1, 0.30980393, 0.6039216, 1)
+strength = 0.16
+
+[node name="Trash" type="Sprite2D" parent="Decor" unique_id=538348378]
+position = Vector2(284, 168)
+script = ExtResource("4_16tge")
+prop_name = "trash"
+
+[node name="Trash2" type="Sprite2D" parent="Decor" unique_id=1340669534]
+position = Vector2(424, 168)
+script = ExtResource("4_16tge")
+prop_name = "trash"
+
+[node name="Vending" type="Sprite2D" parent="Decor" unique_id=135714286]
+position = Vector2(341, 176)
+script = ExtResource("4_16tge")
+prop_name = "vending"
+glow = 1.6
+flicker = 1
+
+[node name="Glow3" type="Node2D" parent="Decor" unique_id=581885080]
+position = Vector2(341, 168)
+script = ExtResource("5_1nphh")
+radius = 22.0
+color = Color(1, 0.30980393, 0.6039216, 1)
+strength = 0.22
+
+[node name="Lamp" type="Sprite2D" parent="Decor" unique_id=1994844162]
+position = Vector2(32, 15)
+script = ExtResource("4_16tge")
+prop_name = "lamp"
+glow = 2.2
+
+[node name="LightCone" type="Node2D" parent="Decor" unique_id=2049714904]
+position = Vector2(32, 15)
+script = ExtResource("6_ciyj4")
+length = 153.0
+
+[node name="Lamp2" type="Sprite2D" parent="Decor" unique_id=1038638886]
+position = Vector2(96, 15)
+script = ExtResource("4_16tge")
+prop_name = "lamp"
+glow = 2.2
+
+[node name="LightCone2" type="Node2D" parent="Decor" unique_id=1128807930]
+position = Vector2(96, 15)
+script = ExtResource("6_ciyj4")
+length = 153.0
+
+[node name="Lamp3" type="Sprite2D" parent="Decor" unique_id=644252951]
+position = Vector2(208, 15)
+script = ExtResource("4_16tge")
+prop_name = "lamp"
+glow = 2.2
+
+[node name="LightCone3" type="Node2D" parent="Decor" unique_id=208396164]
+position = Vector2(208, 15)
+script = ExtResource("6_ciyj4")
+length = 137.0
+
+[node name="Lamp4" type="Sprite2D" parent="Decor" unique_id=2108668120]
+position = Vector2(272, 15)
+script = ExtResource("4_16tge")
+prop_name = "lamp"
+glow = 2.2
+
+[node name="LightCone4" type="Node2D" parent="Decor" unique_id=1568252166]
+position = Vector2(272, 15)
+script = ExtResource("6_ciyj4")
+length = 153.0
+
+[node name="Lamp5" type="Sprite2D" parent="Decor" unique_id=1881260621]
+position = Vector2(336, 15)
+script = ExtResource("4_16tge")
+prop_name = "lamp"
+glow = 2.2
+
+[node name="LightCone5" type="Node2D" parent="Decor" unique_id=538821428]
+position = Vector2(336, 15)
+script = ExtResource("6_ciyj4")
+length = 161.0
+
+[node name="Lamp6" type="Sprite2D" parent="Decor" unique_id=1112266568]
+position = Vector2(400, 15)
+script = ExtResource("4_16tge")
+prop_name = "lamp"
+glow = 2.2
+
+[node name="LightCone6" type="Node2D" parent="Decor" unique_id=753315638]
+position = Vector2(400, 15)
+script = ExtResource("6_ciyj4")
+length = 153.0
+
+[node name="Lamp7" type="Sprite2D" parent="Decor" unique_id=217847157]
+position = Vector2(136, 103)
+script = ExtResource("4_16tge")
+prop_name = "lamp"
+glow = 2.2
+
+[node name="LightCone7" type="Node2D" parent="Decor" unique_id=85833957]
+position = Vector2(136, 103)
+script = ExtResource("6_ciyj4")
+length = 65.0
+
+[node name="NeonYe" type="Sprite2D" parent="Decor" unique_id=1141399930]
+position = Vector2(216, 110)
+script = ExtResource("4_16tge")
+prop_name = "neon_ye"
+glow = 1.9
+flicker = 1
+
+[node name="Glow4" type="Node2D" parent="Decor" unique_id=30996314]
+position = Vector2(216, 92)
+script = ExtResource("5_1nphh")
+color = Color(1, 0.30980393, 0.6039216, 1)
+strength = 0.14
+
+[node name="SignExit" type="Sprite2D" parent="Decor" unique_id=1609437967]
+position = Vector2(430, 132)
+script = ExtResource("4_16tge")
+prop_name = "sign_exit"
+glow = 1.6
+
+[node name="Glow5" type="Node2D" parent="Decor" unique_id=437976585]
+position = Vector2(430, 127)
+script = ExtResource("5_1nphh")
+radius = 18.0
+color = Color(0.3, 1, 0.55, 1)
+strength = 0.1
+
+[node name="Walls" type="TileMapLayer" parent="." unique_id=574680532]
+tile_map_data = PackedByteArray("AAAAAAAAAAAEAAUAAAABAAAAAAAEAAQAAAACAAAAAAAEAAQAAAADAAAAAAAEAAQAAAAEAAAAAAAEAAQAAAAFAAAAAAAEAAQAAAAGAAAAAAAEAAQAAAAHAAAAAAAEAAQAAAAIAAAAAAAEAAQAAAAJAAAAAAAEAAQAAAAKAAAAAAAEAAQAAAALAAAAAAAEAAQAAAAMAAAAAAAEAAQAAAANAAAAAAAEAAQAAAAOAAAAAAABAAUAAAAPAAAAAAABAAYAAAAQAAAAAAAAAAYAAAARAAAAAAAAAAYAAAASAAAAAAAAAAYAAAATAAAAAAAHAAUAAAAUAAAAAAAHAAUAAAAVAAAAAAAHAAUAAAAWAAAAAAAEAAUAAAAXAAAAAAAEAAQAAAAYAAAAAAAEAAQAAAAZAAAAAAAEAAQAAAAaAAAAAAAEAAQAAAAbAAAAAAAEAAQAAAAcAAAAAAAEAAQAAAAdAAAAAAAEAAQAAAAeAAAAAAAEAAQAAAAfAAAAAAAEAAQAAAAgAAAAAAAEAAQAAAAhAAAAAAAEAAQAAAAiAAAAAAAEAAQAAAAjAAAAAAAEAAQAAAAkAAAAAAAEAAQAAAAlAAAAAAAEAAQAAAAmAAAAAAAEAAQAAAAnAAAAAAAEAAQAAAAoAAAAAAAEAAQAAAApAAAAAAAEAAQAAAAqAAAAAAAEAAQAAAArAAAAAAAEAAQAAAAsAAAAAAAEAAQAAAAtAAAAAAAEAAQAAAAuAAAAAAAEAAQAAAAvAAAAAAAEAAQAAAAwAAAAAAAEAAQAAAAxAAAAAAAEAAQAAAAyAAAAAAAEAAQAAAAzAAAAAAAEAAQAAAA0AAAAAAAEAAQAAAA1AAAAAAAEAAQAAAA2AAAAAAAEAAQAAAA3AAAAAAAEAAQAAAA4AAAAAAAEAAQAAAA5AAAAAAAEAAQAAAA6AAAAAAAEAAQAAAA7AAAAAAABAAUAAAAAAAEAAAACAAUAAAAOAAEAAAAEAAEAAAAPAAEAAAAHAAUAAAAQAAEAAAAHAAUAAAARAAEAAAAGAAUAAAASAAEAAAAGAAUAAAATAAEAAAAGAAUAAAAUAAEAAAABAAYAAAAVAAEAAAAAAAYAAAAWAAEAAAACAAUAAAA7AAEAAAAEAAEAAAAAAAIAAAACAAUAAAAOAAIAAAAEAAEAAAAPAAIAAAAGAAUAAAAQAAIAAAAGAAUAAAARAAIAAAAGAAUAAAASAAIAAAAGAAUAAAATAAIAAAAGAAUAAAAUAAIAAAAGAAUAAAAVAAIAAAAGAAUAAAAWAAIAAAACAAUAAAA7AAIAAAAEAAEAAAAAAAMAAAACAAUAAAAOAAMAAAAEAAEAAAAPAAMAAAAGAAUAAAAQAAMAAAAGAAUAAAARAAMAAAAGAAUAAAASAAMAAAAGAAUAAAATAAMAAAAGAAUAAAAUAAMAAAAGAAUAAAAVAAMAAAAGAAUAAAAWAAMAAAACAAUAAAA7AAMAAAAEAAEAAAAAAAQAAAACAAUAAAAOAAQAAAAEAAEAAAAPAAQAAAABAAYAAAAQAAQAAAAAAAYAAAARAAQAAAAAAAYAAAASAAQAAAAHAAUAAAATAAQAAAAHAAUAAAAUAAQAAAAHAAUAAAAVAAQAAAAHAAUAAAAWAAQAAAACAAUAAAA7AAQAAAAEAAEAAAAAAAUAAAACAAUAAAAOAAUAAAAEAAEAAAAPAAUAAAAHAAUAAAAQAAUAAAAHAAUAAAARAAUAAAAGAAUAAAASAAUAAAAGAAUAAAATAAUAAAAGAAUAAAAUAAUAAAABAAYAAAAVAAUAAAAAAAYAAAAWAAUAAAACAAUAAAA7AAUAAAAEAAEAAAAAAAYAAAACAAUAAAAOAAYAAAAEAAEAAAAPAAYAAAAGAAUAAAAQAAYAAAAGAAUAAAARAAYAAAAGAAUAAAASAAYAAAAGAAUAAAATAAYAAAAGAAUAAAAUAAYAAAAGAAUAAAAVAAYAAAAGAAUAAAAWAAYAAAACAAUAAAA7AAYAAAAEAAEAAAAAAAcAAAACAAUAAAAOAAcAAAAEAAEAAAAPAAcAAAAGAAUAAAAQAAcAAAAGAAUAAAARAAcAAAAGAAUAAAASAAcAAAAGAAUAAAATAAcAAAAGAAUAAAAUAAcAAAAGAAUAAAAVAAcAAAAGAAUAAAAWAAcAAAACAAUAAAA7AAcAAAAEAAEAAAAAAAgAAAACAAUAAAAOAAgAAAAEAAEAAAAPAAgAAAABAAYAAAAQAAgAAAAAAAYAAAARAAgAAAAAAAYAAAASAAgAAAAHAAUAAAATAAgAAAAHAAUAAAAUAAgAAAAHAAUAAAAVAAgAAAAHAAUAAAAWAAgAAAACAAUAAAA7AAgAAAAEAAEAAAAAAAkAAAACAAUAAAAOAAkAAAAEAAEAAAAPAAkAAAAHAAUAAAAQAAkAAAAHAAUAAAARAAkAAAAGAAUAAAASAAkAAAAGAAUAAAATAAkAAAAGAAUAAAAUAAkAAAABAAYAAAAVAAkAAAABAAYAAAAWAAkAAAACAAUAAAA7AAkAAAAEAAEAAAAAAAoAAAACAAUAAAAOAAoAAAAEAAEAAAAPAAoAAAAGAAUAAAAQAAoAAAAGAAUAAAARAAoAAAAGAAUAAAASAAoAAAAGAAUAAAATAAoAAAAGAAUAAAAUAAoAAAAGAAUAAAAVAAoAAAAGAAUAAAAWAAoAAAACAAUAAAA7AAoAAAAEAAEAAAAAAAsAAAACAAUAAAAOAAsAAAAEAAAAAAAPAAsAAAAEAAQAAAAQAAsAAAAEAAQAAAARAAsAAAAEAAQAAAASAAsAAAAEAAQAAAATAAsAAAAEAAQAAAAUAAsAAAAEAAQAAAAVAAsAAAAEAAQAAAAWAAsAAAACAAQAAAA7AAsAAAAEAAEAAAAAAAwAAAACAAUAAAA7AAwAAAAEAAEAAAAAAA0AAAACAAUAAAA7AA0AAAAEAAEAAAAAAA4AAAACAAUAAAA7AA4AAAAEAAEAAAAAAA8AAAACAAUAAAA7AA8AAAAEAAEAAAAAABAAAAACAAUAAAA7ABAAAAAEAAEAAAAAABEAAAACAAUAAAA7ABEAAAAEAAEAAAAAABIAAAACAAUAAAA7ABIAAAAEAAEAAAAAABMAAAACAAUAAAAaABMAAAAFAAAAAAAfABMAAAAFAAAAAAA7ABMAAAAEAAEAAAAAABQAAAACAAUAAAAaABQAAAAGAAAAAAAfABQAAAAGAAAAAAA7ABQAAAAEAAEAAAAAABUAAAAFAAUAAAABABUAAAAHAAMAAAACABUAAAAHAAMAAAADABUAAAAHAAMAAAAEABUAAAAHAAMAAAAFABUAAAAHAAMAAAAGABUAAAAHAAMAAAAHABUAAAAHAAMAAAAIABUAAAAHAAMAAAAJABUAAAAHAAMAAAAKABUAAAAHAAMAAAALABUAAAADAAYAAAAMABUAAAADAAYAAAANABUAAAACAAYAAAAOABUAAAACAAYAAAAPABUAAAACAAYAAAAQABUAAAACAAYAAAARABUAAAAHAAMAAAASABUAAAAHAAMAAAATABUAAAAHAAMAAAAUABUAAAAHAAMAAAAVABUAAAADAAYAAAAWABUAAAAHAAMAAAAXABUAAAAHAAMAAAAYABUAAAAHAAMAAAAZABUAAAAHAAMAAAAaABUAAAAAAAQAAAAbABUAAAAHAAMAAAAcABUAAAAHAAMAAAAdABUAAAAHAAMAAAAeABUAAAAHAAMAAAAfABUAAAAAAAQAAAAgABUAAAAHAAMAAAAhABUAAAADAAYAAAAiABUAAAADAAYAAAAjABUAAAACAAYAAAAkABUAAAACAAYAAAAlABUAAAACAAYAAAAmABUAAAACAAYAAAAnABUAAAACAAMAAAAtABUAAAACAAEAAAAuABUAAAAHAAMAAAAvABUAAAAHAAMAAAAwABUAAAAHAAMAAAAxABUAAAAHAAMAAAAyABUAAAAHAAMAAAAzABUAAAAHAAMAAAA0ABUAAAAHAAMAAAA1ABUAAAAHAAMAAAA2ABUAAAAHAAMAAAA3ABUAAAADAAYAAAA4ABUAAAADAAYAAAA5ABUAAAACAAYAAAA6ABUAAAACAAYAAAA7ABUAAAABAAQAAAAAABYAAAAGAAUAAAABABYAAAAGAAUAAAACABYAAAAGAAUAAAADABYAAAABAAYAAAAEABYAAAAGAAUAAAAFABYAAAAAAAYAAAAGABYAAAAAAAYAAAAHABYAAAAHAAUAAAAIABYAAAAAAAYAAAAJABYAAAAHAAUAAAAKABYAAAAHAAUAAAALABYAAAAGAAUAAAAMABYAAAAGAAUAAAANABYAAAAGAAUAAAAOABYAAAAGAAUAAAAPABYAAAAGAAUAAAAQABYAAAAGAAUAAAARABYAAAAGAAUAAAASABYAAAAGAAUAAAATABYAAAAGAAUAAAAUABYAAAAGAAUAAAAVABYAAAAGAAUAAAAWABYAAAAGAAUAAAAXABYAAAAGAAUAAAAYABYAAAAGAAUAAAAZABYAAAABAAYAAAAaABYAAAAGAAUAAAAbABYAAAAAAAYAAAAcABYAAAAAAAYAAAAdABYAAAAHAAUAAAAeABYAAAAAAAYAAAAfABYAAAAHAAUAAAAgABYAAAAHAAUAAAAhABYAAAAGAAUAAAAiABYAAAAGAAUAAAAjABYAAAAGAAUAAAAkABYAAAAGAAUAAAAlABYAAAAGAAUAAAAmABYAAAAGAAUAAAAnABYAAAAFAAUAAAAoABYAAAAHAAMAAAApABYAAAAHAAMAAAAqABYAAAAHAAMAAAArABYAAAAHAAMAAAAsABYAAAAHAAMAAAAtABYAAAABAAQAAAAuABYAAAAGAAUAAAAvABYAAAABAAYAAAAwABYAAAAGAAUAAAAxABYAAAAAAAYAAAAyABYAAAAAAAYAAAAzABYAAAAHAAUAAAA0ABYAAAAAAAYAAAA1ABYAAAAHAAUAAAA2ABYAAAAHAAUAAAA3ABYAAAAGAAUAAAA4ABYAAAAGAAUAAAA5ABYAAAAGAAUAAAA6ABYAAAAGAAUAAAA7ABYAAAAGAAUAAAA=")
+tile_set = ExtResource("7_88ktw")
+
+[node name="Electric" type="TileMapLayer" parent="." unique_id=1904641577]
+tile_map_data = PackedByteArray("AAAoABUAAAAAAAAAAAApABUAAAAAAAAAAAAqABUAAAAAAAAAAAArABUAAAAAAAAAAAAsABUAAAAAAAAAAAA=")
+tile_set = ExtResource("8_thh07")
+script = ExtResource("9_ivanv")
+
+[node name="Entities" type="Node2D" parent="." unique_id=818135760]
+
+[node name="CameraGuard" type="Area2D" parent="Entities" unique_id=343799659 instance=ExtResource("10_8td5s")]
+position = Vector2(148, 96)
+collision_layer = 4
+collision_mask = 2
+script = ExtResource("11_0tfsk")
+mount = 1
+look_angle = 90.0
+
+[node name="CameraGuard2" type="Area2D" parent="Entities" unique_id=1125597410 instance=ExtResource("10_8td5s")]
+position = Vector2(472, 124)
+collision_layer = 4
+collision_mask = 2
+script = ExtResource("11_0tfsk")
+mount = 3
+look_angle = 160.0
+
+[node name="TimerGate" type="Area2D" parent="Entities" unique_id=483104848 instance=ExtResource("12_gpcmx")]
+position = Vector2(72, 144)
+collision_layer = 8
+collision_mask = 2
+monitorable = false
+script = ExtResource("13_b5k1s")
+seconds = 30.0
+
+[node name="CameraGuard3" type="Area2D" parent="Entities" unique_id=139725732 instance=ExtResource("10_8td5s")]
+position = Vector2(216, 164)
+collision_layer = 4
+collision_mask = 2
+script = ExtResource("11_0tfsk")
+look_angle = 0.0
+
+[node name="WeaponZone" type="Area2D" parent="Entities" unique_id=1412479359 instance=ExtResource("14_7bnun")]
+position = Vector2(272, 144)
+collision_layer = 8
+collision_mask = 2
+monitorable = false
+script = ExtResource("15_qrupw")
+weapon_type = -1
+
+[node name="WeaponZone2" type="Area2D" parent="Entities" unique_id=606831859 instance=ExtResource("14_7bnun")]
+position = Vector2(296, 144)
+collision_layer = 8
+collision_mask = 2
+monitorable = false
+script = ExtResource("15_qrupw")
+
+[node name="CameraGuard4" type="Area2D" parent="Entities" unique_id=254995447 instance=ExtResource("10_8td5s")]
+position = Vector2(380, 168)
+collision_layer = 4
+collision_mask = 2
+script = ExtResource("11_0tfsk")
+mount = 0
+look_angle = 235.0
+
+[node name="GroundGuard" type="Area2D" parent="Entities" unique_id=1827779951 instance=ExtResource("16_7o3qy")]
+position = Vector2(412, 162)
+collision_layer = 4
+collision_mask = 2
+script = ExtResource("17_7lfl5")
+facing = -1
+
+[node name="Exit" type="Area2D" parent="Entities" unique_id=1088406412 instance=ExtResource("18_y27tq")]
+position = Vector2(444, 160)
+collision_layer = 8
+collision_mask = 2
+script = ExtResource("19_4yo83")
+
+[node name="Player" type="CharacterBody2D" parent="." unique_id=884582693 instance=ExtResource("20_l6lqw")]
+position = Vector2(28, 163)
+collision_layer = 2
+script = ExtResource("21_lvuwt")

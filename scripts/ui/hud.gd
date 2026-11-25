@@ -13,6 +13,18 @@ var _last_sig := ""
 var _toast := ""
 var _toast_col := Color.WHITE
 var _toast_t := 0.0        # 剩余显示时间（秒）
+var _cd_t := 99.0          # 倒计时出现后经过的时间（滑入 / 闪亮动画）
+var _cd_pop := 0.0         # 最后 5 秒每跳一秒弹一下 1 → 0
+
+
+## 计时门触发：倒计时从顶部滑入并闪一下
+func countdown_started() -> void:
+	_cd_t = 0.0
+	_cd_pop = 1.0
+
+
+func countdown_tick() -> void:
+	_cd_pop = 1.0
 
 
 ## 武器栏下方弹出一行小字：滑入、停留、淡出
@@ -31,6 +43,8 @@ func _process(delta: float) -> void:
 	_t += delta
 	_flash = maxf(_flash - delta * 4.0, 0.0)
 	_toast_t = maxf(_toast_t - delta, 0.0)
+	_cd_t += delta
+	_cd_pop = maxf(_cd_pop - delta * 5.0, 0.0)
 	queue_redraw()
 
 
@@ -42,7 +56,7 @@ func _draw() -> void:
 	var slots: Array = []
 	for w in p.weapon_queue:
 		slots.append([w["type"], str(w["ammo"])])
-	slots.append([p.initial_weapon, "∞"])
+	slots.append([p.initial_weapon, "" if WeaponDefs.is_none(p.initial_weapon) else "∞"])
 	var sig := str(slots)
 	if sig != _last_sig:
 		_last_sig = sig
@@ -71,8 +85,43 @@ func _draw() -> void:
 	_text_num(str(gl), Vector2(r.position.x + 15, 10), Palette.W3 if gl > 0 else Color(0.4, 2.0, 0.7))
 	var tm := level.time
 	_text_num("%02d:%04.1f" % [int(tm / 60.0), fmod(tm, 60.0)], Vector2(r.position.x + 30, 10), Palette.C3)
+	if level.countdown_active():
+		_draw_countdown()
 	_draw_toast()
 	_draw_threats()
+
+
+## 顶部中间的倒计时：暗底横条（两侧斜切）+ 大号数字 + 下沿剩余进度条。
+## 钴蓝；最后 5 秒变红、闪烁，每跳一秒数字上弹 1px 并加亮；通关后定格变绿。
+func _draw_countdown() -> void:
+	var left := level.timer_left
+	var done := level.is_done()
+	var appear := ease(clampf(_cd_t / 0.18, 0.0, 1.0), 0.4)
+	var y0 := roundf(-18.0 * (1.0 - appear))
+	var r := Rect2(160 - 25, y0, 50, 16)
+	var bg := Color(Palette.N0, 0.78)
+	draw_rect(r, bg)
+	for i in 4:   # 两侧斜切角
+		draw_rect(Rect2(r.position.x - 1 - i, y0, 1, r.size.y - i * 4), bg)
+		draw_rect(Rect2(r.end.x + i, y0, 1, r.size.y - i * 4), bg)
+	var low := left < 5.0 and not done
+	var c := Palette.TIMER
+	if done:
+		c = Palette.EXIT_OPEN
+	elif low:
+		var blink := 1.0 if fmod(_t, 0.25) < 0.17 else 0.6
+		c = Palette.ALERT * Color(blink, blink, blink)
+	var k := 1.0 + _cd_pop * 0.8 + maxf(0.0, 0.3 - _cd_t) * 5.0      # 刚出现 / 跳秒时加亮
+	var txt := "%05.2f" % left
+	var f := UiFonts.num()
+	var w := f.get_string_size(txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x
+	var at := Vector2(roundf(160.0 - w * 0.5), y0 + 12.0 - roundf(_cd_pop))
+	draw_string(f, at + Vector2(1, 1), txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color(0, 0, 0, 0.6))
+	draw_string(f, at, txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color(c.r * k, c.g * k, c.b * k))
+	# 剩余进度：下沿一条 1px 线，亮段从右往左缩短
+	var frac := clampf(left / maxf(level.timer_total, 0.01), 0.0, 1.0)
+	draw_rect(Rect2(r.position.x, r.end.y, r.size.x, 1), Color(Palette.N3, 0.9))
+	draw_rect(Rect2(r.position.x, r.end.y, roundf(r.size.x * frac), 1), c * Color(0.8, 0.8, 0.8))
 
 
 ## 屏外威胁：锁定玩家的守卫在画面外时，屏幕边缘对应方向画一个小箭头 + 警戒进度，
@@ -151,8 +200,22 @@ func _brackets(r: Rect2, c: Color) -> void:
 
 
 func _icon(type: int, at: Vector2, mod: Color) -> void:
+	if WeaponDefs.is_none(type):
+		_empty_icon(at, mod)
+		return
 	var r := Prop.rect_of(ICON.get(type, "icon_dart"))
 	draw_texture_rect_region(PROPS, Rect2(at, r.size), r, mod)
+
+
+## 徒手：8×8 的虚线空槽，中间一道斜杠
+func _empty_icon(at: Vector2, mod: Color) -> void:
+	var c := Color(0.42 * mod.r, 0.4 * mod.g, 0.55 * mod.b, mod.a)
+	for i in 8:
+		if i % 2 == 0:
+			for e in [Vector2(i, 0), Vector2(i, 7), Vector2(0, i), Vector2(7, i)]:
+				draw_rect(Rect2(at + e, Vector2.ONE), c)
+	for i in range(2, 6):
+		draw_rect(Rect2(at + Vector2(7 - i, i), Vector2.ONE), Color(c.r * 1.4, c.g * 1.4, c.b * 1.4, c.a))
 
 
 ## 数字用 m6x11（字号 8 = 原生 16px 的一半，根视口高分辨率下依然锐利）；∞ 用像素图案画

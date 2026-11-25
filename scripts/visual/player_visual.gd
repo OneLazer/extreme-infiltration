@@ -14,7 +14,8 @@ const ANIM := {"idle": [0, 4, 5.0], "run": [4, 4, 12.0], "jump": [8, 1, 1.0], "f
 
 @export var squash_return := 1.75       ## 挤压拉伸回弹速度（每秒，同 Celeste）
 @export var scarf_segments := 7
-@export var scarf_seg_len := 1.6
+@export var scarf_seg_len := 1.75
+@export_range(0.0, 1.0) var scarf_thick_ratio := 0.5   ## 围巾前多少比例的段画成 2px 粗
 @export var ghost_interval := 0.045     ## 冲刺残影间隔（秒）
 
 var _p: Player
@@ -63,6 +64,7 @@ func _ready() -> void:
 	_p.thrust.connect(_on_thrust)
 	_p.thrust_hit.connect(_on_thrust_hit)
 	_p.thrust_ended.connect(_on_thrust_ended)
+	_p.deflected.connect(_on_deflected)
 func _process(delta: float) -> void:
 	if _p.dead:
 		return
@@ -130,7 +132,8 @@ func _update_gun(delta: float) -> void:
 		WeaponDefs.Type.RAPIER:
 			key = "gun_rapier"
 	# 刺剑出刺时手里的刀换成运行时画的长刀身（见 _draw_blade）；空中用掉次数后刀身变暗
-	_gun.visible = not is_instance_valid(_p.active_boomerang) and not _p.is_rapier_attacking()
+	_gun.visible = not is_instance_valid(_p.active_boomerang) and not _p.is_rapier_attacking() \
+		and not WeaponDefs.is_none(w)
 	_gun.modulate = Color(0.45, 0.45, 0.55) if w == WeaponDefs.Type.RAPIER and not _p.rapier_ready() else Color.WHITE
 	_gun.region_rect = Prop.rect_of(key)
 	var ang := snappedf(_p._aim_dir.angle(), PI / 8.0)   # 16 向，减少像素旋转的锯齿
@@ -208,16 +211,66 @@ func _update_scarf(delta: float) -> void:
 func _draw() -> void:
 	if _p.dead:
 		return
-	var col := Palette.SCARF if _p.air_jumps_left() > 0 else Palette.SCARF_USED
-	var shade := Color(col.r * 0.55, col.g * 0.55, col.b * 0.6)
+	_draw_scarf()
+	if _p.is_rapier_attacking():
+		_draw_blade()
+
+
+## 围巾逐像素画：节点四舍五入到整像素后用 Bresenham 连起来，不会因为两点重合或斜线而断开。
+## 前 scarf_thick_ratio 段是 2×2 像素块（粗），之后 1px 收尾；粗的部分下方垫一排暗色当作厚度。
+## 以前用 draw_line(宽 1.0) 画四边形，段长只有 1.6px，经常整段消失或闪烁。
+func _draw_scarf() -> void:
+	var col := Palette.SCARF if _scarf_charged() else Palette.SCARF_USED
+	var shade := Color(col.r * 0.5, col.g * 0.5, col.b * 0.55)
+	var px: Array[Vector2] = []     # 每个像素的位置
+	var wide: Array[bool] = []      # 该像素是否画粗
+	var thick_n := int(ceil((_scarf.size() - 1) * scarf_thick_ratio))
 	for i in range(_scarf.size() - 1):
 		var a := to_local(_scarf[i]).round()
 		var b := to_local(_scarf[i + 1]).round()
-		if i < 3:
-			draw_line(a + Vector2(0, 1), b + Vector2(0, 1), shade, 1.0)
-		draw_line(a, b, col, 1.0)
-	if _p.is_rapier_attacking():
-		_draw_blade()
+		for p in _bresenham(a, b, i > 0):
+			px.append(p)
+			wide.append(i < thick_n)
+	for k in px.size():             # 先画暗色底边，再画主色
+		if wide[k]:
+			draw_rect(Rect2(px[k] + Vector2(0, 2), Vector2(2, 1)), shade)
+	for k in px.size():
+		var s := Vector2(2, 2) if wide[k] else Vector2.ONE
+		draw_rect(Rect2(px[k], s), col)
+
+
+## 二段跳可用 → 亮色；关卡关闭二段跳时围巾一直保持亮色（不显示「已用」）
+func _scarf_charged() -> bool:
+	return _p.air_jump_count <= 0 or _p.air_jumps_left() > 0
+
+
+## a → b 的整像素点（含 b；skip_first 时不含 a，避免相邻两段重复画同一点）
+static func _bresenham(a: Vector2, b: Vector2, skip_first: bool) -> Array[Vector2]:
+	var out: Array[Vector2] = []
+	var x0 := int(a.x)
+	var y0 := int(a.y)
+	var x1 := int(b.x)
+	var y1 := int(b.y)
+	var dx := absi(x1 - x0)
+	var dy := -absi(y1 - y0)
+	var sx := 1 if x0 < x1 else -1
+	var sy := 1 if y0 < y1 else -1
+	var err := dx + dy
+	var first := true
+	while true:
+		if not (first and skip_first):
+			out.append(Vector2(x0, y0))
+		first = false
+		if x0 == x1 and y0 == y1:
+			break
+		var e2 := 2 * err
+		if e2 >= dy:
+			err += dy
+			x0 += sx
+		if e2 <= dx:
+			err += dx
+			y0 += sy
+	return out
 
 
 ## 刺剑刀身：出刺头两帧从 6px 弹出到全长（略微过冲），白芯 + 银边，刀尖一颗星点。
@@ -377,15 +430,49 @@ func _on_thrust_ended(from: Vector2, to: Vector2) -> void:
 	Juice.glints(to + d * 12.0, 3, Palette.RAPIER, 4.0)
 
 
+## 冲刺无敌挡下守卫攻击：剪影闪白、来袭方向弹开一束火花、白色冲击环，2 帧顿帧 + 镜头往反方向顶一下
+func _on_deflected(from: Vector2) -> void:
+	var at := _p.global_position
+	var d := (at - from).normalized()
+	if d == Vector2.ZERO:
+		d = Vector2.UP
+	Juice.ghost(_body.global_position, SIL, _body.region_rect, _body.offset, _body.flip_h, _body.scale,
+		Color(3.0, 3.0, 3.2), 0.06, 1.0)
+	Juice.ring(at, 8.0, Color(2.2, 2.2, 2.6), 0.16)
+	Juice.sparks(at - d * 3.0, 7, -d, 0.9, 170.0, Color(2.6, 2.6, 2.9))
+	Juice.glints(at, 4, Palette.SCARF, 6.0)
+	Game.hitstop(0.035)
+	ScreenFx.pulse(1.4)
+	var cam := _p.get_node_or_null("Camera2D")
+	if cam:
+		cam.kick(d * 2.0)
+
+
 func _on_died() -> void:
 	var at := _p.global_position
 	if _p.death_cause == "electric":
 		_electric_death(at)
 		return
+	if _p.death_cause == "timeout":
+		_timeout_death(at)
+		return
 	Juice.flash(at, "kill_magenta", 0.0, Color(1.5, 1.5, 1.5))
 	Juice.debris(at, 10, Vector2.UP, [Color("#e4e0f5"), Color("#a7a1d0"), Color("#2a2250"), Palette.P3], 130.0, Color.WHITE)
 	Juice.sparks(at, 10, Vector2.UP, PI, 150.0, Palette.SCARF)
 	Juice.ring(at, 14.0, Palette.SCARF, 0.3)
+
+
+## 超时：钴蓝剪影定格一下，像钟面一样碎成一圈蓝白碎片，外加两层冲击环；屏幕闪白，接着走倒带
+func _timeout_death(at: Vector2) -> void:
+	Juice.ghost(_body.global_position, SIL, _body.region_rect, _body.offset, _body.flip_h, Vector2.ONE,
+		Palette.TIMER * Color(1.3, 1.3, 1.3), 0.35, 1.0)
+	Juice.ring(at, 16.0, Palette.TIMER, 0.35)
+	Juice.ring(at, 7.0, Color(2.6, 2.6, 3.0), 0.15)
+	Juice.debris(at, 10, Vector2.UP, [Color("#e4e0f5"), Color("#2a2250"), Palette.C1, Palette.C2], 120.0, Palette.TIMER)
+	Juice.sparks(at, 12, Vector2.UP, PI, 140.0, Palette.TIMER)
+	Juice.glints(at, 8, Palette.TIMER, 10.0)
+	ScreenFx.flash(0.3)
+	ScreenFx.pulse(3.0)
 
 
 ## 被高压电电死：剪影红白交替闪、电弧炸开、围巾色碎片少一些，屏幕闪一下

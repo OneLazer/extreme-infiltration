@@ -39,6 +39,7 @@ const VISION_SEARCH := Color(1.0, 0.45, 0.16)  ## 视野锥：搜索 / 警戒
 const VISION_ALERT := Color(1.0, 0.16, 0.24)
 const SEARCH := Color(2.4, 0.9, 0.15)          ## 守卫搜索：面罩、「?」
 const RAPIER := Color(2.1, 2.2, 2.7)           ## 刺剑：冷银白
+const TIMER := Color(0.45, 0.9, 2.8)           ## 计时门 / 倒计时：钴蓝（和飞镖的青色区分开）
 const ELECTRIC := Color(2.8, 0.35, 0.75)       ## 高压电（#ff2a5a 一带，HDR）
 const ELECTRIC_CORE := Color(3.2, 2.2, 2.6)    ## 电弧白芯
 const ELECTRIC_FILL := Color("#2a0718")        ## 电块内部底色（环境亮度，不发光）

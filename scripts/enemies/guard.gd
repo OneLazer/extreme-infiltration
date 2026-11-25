@@ -289,14 +289,16 @@ func eye() -> Vector2:
 
 # ======================= 接触 =======================
 
-## 身体接触：玩家刺剑冲刺中 → 守卫被刺死；玩家无敌 → 无事；否则玩家死。
+## 身体接触：玩家刺剑冲刺中 → 守卫被刺死；玩家无敌（冲刺中）→ 偏折特效；否则玩家死。
 ## 每帧查重叠而不是只听 body_entered：无敌结束时还贴在一起也要判定。
 func _touch_player(p: Player) -> void:
 	if not overlaps_body(p):
 		return
 	if p.is_rapier_attacking():
 		p.rapier_kill(self)
-	elif not p.is_invincible():
+	elif p.is_invincible():
+		p.deflect(global_position)
+	else:
 		p.die()
 
 # ======================= 视野 =======================

@@ -7,8 +7,16 @@ extends Node2D
 @export_file("*.tscn") var next_level := ""   ## 通关后进入的关卡，留空则重开本关
 @export var restart_delay := 0.15            ## 死亡后到开始倒带的停顿（真实时间）
 
+@export_group("关卡设置")
+## 玩家开局的主武器（无限弹药，武器队列打空后回到它）。无武器 = 徒手，不能开火
+@export_enum("无武器:-1", "飞镖:0", "回旋镖:1", "重型回旋镖:2", "气枪:3", "刺剑:4") var initial_weapon := 0
+@export var allow_double_jump := true        ## 关闭后本关不能二段跳（冲刺中也不能用二段跳打断）
+
 var enemies_left := 0
 var time := 0.0
+## 计时门倒计时：timer_left < 0 表示没在倒计时。由 TimerGate 调 start_countdown 开始
+var timer_left := -1.0
+var timer_total := 0.0
 var _done := false
 var _hud: Hud
 var _hud_layer: CanvasLayer
@@ -29,13 +37,59 @@ func _ready() -> void:
 	_build_hud()
 	_setup_camera()
 	if Game.player:
+		_apply_settings(Game.player)
 		Game.player.died.connect(_on_player_died)
 	ScreenFx.wipe_in()
+
+
+## 关卡设置写入玩家（Player 是子节点，这时已经 _ready 过）
+func _apply_settings(p: Player) -> void:
+	p.initial_weapon = initial_weapon
+	p.weapon_queue.clear()
+	if not allow_double_jump:
+		p.air_jump_count = 0
+	p.weapons_changed.emit()
 
 
 func _physics_process(delta: float) -> void:
 	if not _done and not Game.frozen and Game.player and not Game.player.dead:
 		time += delta
+		_tick_countdown(delta)
+
+
+## 计时门开始（或重置）倒计时
+func start_countdown(sec: float) -> void:
+	if _done:
+		return
+	timer_total = sec
+	timer_left = sec
+	if _hud:
+		_hud.countdown_started()
+	toast("限时 %d 秒" % int(ceil(sec)), Palette.TIMER)
+
+
+func countdown_active() -> bool:
+	return timer_left >= 0.0
+
+
+func is_done() -> bool:
+	return _done
+
+
+## 倒计时：最后 5 秒每过一整秒脉冲一下、屏幕边缘泛红越来越重；归零即超时死亡
+func _tick_countdown(delta: float) -> void:
+	if timer_left < 0.0:
+		return
+	var before := timer_left
+	timer_left = maxf(timer_left - delta, 0.0)
+	if timer_left < 5.0:
+		ScreenFx.danger(0.35 + 0.65 * (1.0 - timer_left / 5.0))
+		if ceilf(timer_left) < ceilf(before):
+			ScreenFx.pulse(1.0 + (5.0 - ceilf(timer_left)) * 0.3)
+			if _hud:
+				_hud.countdown_tick()
+	if timer_left <= 0.0:
+		Game.player.die_timeout()
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -58,6 +112,8 @@ func _on_player_died() -> void:
 	var cam := Game.player.get_node_or_null("Camera2D")
 	if cam:
 		cam.shake(4.0, 0.3)
+	if Game.player.death_cause == "timeout":
+		_banner.show_text("时间到", "", 0.5)
 	await get_tree().create_timer(restart_delay, true, false, true).timeout
 	await ScreenFx.death_rewind()
 	PixelView.reload()

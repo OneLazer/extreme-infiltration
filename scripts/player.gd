@@ -17,6 +17,7 @@ signal teleported(from: Vector2, to: Vector2)
 signal thrust(dir: Vector2)                       ## 刺剑出刺
 signal thrust_hit(at: Vector2, dir: Vector2)      ## 刺剑刺中守卫
 signal thrust_ended(from: Vector2, to: Vector2)   ## 刺剑冲刺结束（含被跳跃打断）
+signal deflected(from: Vector2)                   ## 冲刺无敌挡下守卫攻击（from：攻击来源）
 
 ## 相机震屏组件（用 preload 显式引用，避免依赖 class_name 的全局类缓存）
 const ScreenShakeScript := preload("res://scripts/screen_shake.gd")
@@ -59,6 +60,7 @@ const ScreenShakeScript := preload("res://scripts/screen_shake.gd")
 @export var recoil_snap_deg := 12.0     ## 反冲方向吸附到 8 方向的容差（度）；0 = 完全跟随鼠标
 @export var dart_air_uses := -1         ## 飞镖离地后可用次数，-1 = 无限
 @export var hide_os_cursor := true      ## 隐藏系统鼠标指针，改用武器色准星
+@export var dash_invincible_grace := 0.05  ## 反冲冲刺结束（或被跳跃打断）后额外的无敌时间（秒）
 
 var facing := 1
 var dead := false
@@ -82,11 +84,11 @@ var _dash_velocity := Vector2.ZERO
 var _dash_end_mult := 1.0
 
 ## 已拾取武器队列（先进先出）。元素：{"type": WeaponDefs.Type, "ammo": int}
-## 队列为空时使用初始主武器（默认飞镖，无限弹药）。
+## 队列为空时使用初始主武器（无限弹药；WeaponDefs.NONE = 徒手，不能开火）。
 var weapon_queue: Array[Dictionary] = []
 ## 初始主武器：武器队列清空后回到该武器，不消耗弹药。
-## 调试时可由 DebugOverlay 在检查器里覆盖。
-var initial_weapon := WeaponDefs.Type.DART
+## 开局值由关卡根节点的「关卡设置」写入（Level.initial_weapon），武器替换区域也会改它。
+var initial_weapon: int = WeaponDefs.Type.DART
 var active_boomerang: Boomerang = null
 
 var _freeze_left := 0
@@ -96,7 +98,8 @@ var _rapier_active := false     # 刺剑冲刺中（攻击判定 + 无敌），�
 var _rapier_dir := Vector2.RIGHT
 var _rapier_from := Vector2.ZERO
 var _rapier_air_used := 0       # 本段滞空已用的刺剑次数：落地或刺杀敌人刷新
-var _invincible_t := 0.0        # >0：额外的无敌宽限（刺剑冲刺结束后）
+var _invincible_t := 0.0        # >0：额外的无敌宽限（刺剑 / 反冲冲刺结束后）
+var _deflect_cd := 0.0          # 偏折特效冷却
 
 @onready var _shape: CollisionShape2D = $CollisionShape2D
 @onready var _camera: ScreenShakeScript = $Camera2D
@@ -116,6 +119,7 @@ func _physics_process(delta: float) -> void:
 	if Game.frozen and _freeze_left <= 0:
 		return
 	_invincible_t = maxf(_invincible_t - delta, 0.0)
+	_deflect_cd = maxf(_deflect_cd - delta, 0.0)
 	_update_aim()
 	if Input.is_action_just_pressed("jump"):
 		_jump_buffer_timer = jump_buffer_time
@@ -143,6 +147,8 @@ func _physics_process(delta: float) -> void:
 				queue_redraw()
 				return
 
+	if dead:          # 开火途中死亡（飞镖瞬移穿电）
+		return
 	_update_movement(delta)
 	queue_redraw()
 
@@ -182,6 +188,7 @@ func _update_movement(delta: float) -> void:
 				velocity *= _dash_end_mult
 				if velocity.y < 0.0:
 					velocity.y *= 0.75
+				_invincible_t = maxf(_invincible_t, dash_invincible_grace)
 				_end_rapier()
 	else:
 		if _move_x != 0:
@@ -361,6 +368,8 @@ func _dash_wall_bounce(wall_dir: int) -> void:
 
 ## 打断冲刺锁速，把控制权交还给普通移动
 func _break_dash() -> void:
+	if _dash_timer > 0.0:
+		_invincible_t = maxf(_invincible_t, dash_invincible_grace)
 	_dash_timer = 0.0
 	_jump_buffer_timer = 0.0
 	_jump_grace_timer = 0.0
@@ -449,6 +458,8 @@ func current_weapon() -> int:
 
 
 func _can_fire() -> bool:
+	if WeaponDefs.is_none(current_weapon()):
+		return false
 	if current_weapon() == WeaponDefs.Type.RAPIER:
 		return not _rapier_active and rapier_ready()
 	if current_weapon() == WeaponDefs.Type.DART and dart_air_uses >= 0 and not is_on_floor():
@@ -591,8 +602,6 @@ func _fire_dart(dir: Vector2, def: Dictionary) -> void:
 	# 玩家只走一半就停在墙面上，看起来像「打中了人却撞墙」。
 	# 撞墙：仍用碰撞盒扫掠，落点贴着墙面，不会嵌进墙里。
 	var enemy: Guard = res["enemy"]
-	if enemy:
-		enemy.kill(res["dir"])
 	if enemy != null:
 		global_position = res["end"]
 	else:
@@ -605,6 +614,16 @@ func _fire_dart(dir: Vector2, def: Dictionary) -> void:
 		p.exclude = [get_rid()]
 		var frac := get_world_2d().direct_space_state.cast_motion(p)
 		global_position += motion * frac[0]
+	# 瞬移路径穿过高压电：停在第一次碰到电的位置电死（目标守卫不受影响）
+	var zap := Game.electric_sweep(_hurt_rect(from), global_position - from)
+	if zap >= 0.0:
+		global_position = from + (global_position - from) * zap
+		velocity = Vector2.ZERO
+		teleported.emit(from, global_position)
+		die_electric()
+		return
+	if enemy:
+		enemy.kill(res["dir"])
 	if not def["keep_velocity"]:
 		velocity = Vector2.ZERO
 	if enemy == null:
@@ -733,9 +752,19 @@ func on_boomerang_caught(b: Boomerang, move_dir: Vector2) -> void:
 
 # ======================= 死亡与绘制 =======================
 
-## 无敌：只防守卫（接触、开枪），不防高压电
+## 无敌：只防守卫（接触、开枪、监控激光），不防高压电。
+## 来源：刺剑冲刺、任何反冲锁速冲刺（_dash_timer > 0，气枪 / 重型回旋镖 / 接镖冲刺），以及结束后的宽限
 func is_invincible() -> bool:
-	return _rapier_active or _invincible_t > 0.0
+	return _rapier_active or _dash_timer > 0.0 or _invincible_t > 0.0
+
+
+## 守卫的攻击打在无敌的玩家身上：表现层播放偏折特效。from：攻击来源（全局坐标）
+## 守卫接触是逐帧判定的，用冷却限频，免得一次擦身触发一串
+func deflect(from: Vector2) -> void:
+	if dead or _deflect_cd > 0.0:
+		return
+	_deflect_cd = 0.25
+	deflected.emit(from)
 
 
 ## 刺剑冲刺中：身体本身也是攻击判定
@@ -753,10 +782,17 @@ func rapier_ready() -> bool:
 	return is_on_floor() or _rapier_air_used < int(WeaponDefs.get_def(WeaponDefs.Type.RAPIER)["air_uses"])
 
 
-## 碰撞盒内缩 1px 的受击框：高压电擦边不算
-func _hurt_rect() -> Rect2:
+## 碰撞盒内缩 1px 的受击框：高压电擦边不算。at：碰撞盒中心（默认当前位置）
+func _hurt_rect(at := Vector2.INF) -> Rect2:
+	if at == Vector2.INF:
+		at = global_position
 	var half := (_shape.shape as RectangleShape2D).size * 0.5 - Vector2.ONE
-	return Rect2(global_position - half, half * 2.0)
+	return Rect2(at - half, half * 2.0)
+
+
+## 受击框（全局坐标），监控守卫的激光判定用
+func hurt_rect() -> Rect2:
+	return _hurt_rect()
 
 
 ## 被高压电电死（无敌也挡不住）。表现层按 death_cause 换成电击死亡特效
@@ -764,6 +800,14 @@ func die_electric() -> void:
 	if dead:
 		return
 	death_cause = "electric"
+	die()
+
+
+## 计时门倒计时归零（关卡调用）。表现层换成超时死亡特效
+func die_timeout() -> void:
+	if dead:
+		return
+	death_cause = "timeout"
 	die()
 
 
@@ -788,9 +832,10 @@ func _draw_aim_guide(wdef: Dictionary) -> void:
 	if dead:
 		return
 	var col: Color = wdef["color"]
+	var unarmed := WeaponDefs.is_none(current_weapon())
 	var dim := Color(col.r * 0.45, col.g * 0.45, col.b * 0.45, 0.55 if _freeze_left > 0 else 0.35)
 	var d := 8.0
-	while d < _aim_len:
+	while d < _aim_len and not unarmed:     # 徒手不画瞄准线，只留准星
 		draw_rect(Rect2((_aim_dir * d).round(), Vector2.ONE), dim)
 		d += 3.0
 	var m := to_local(get_global_mouse_position()).round()

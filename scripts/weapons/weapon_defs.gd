@@ -18,12 +18,20 @@ extends RefCounted
 
 enum Type { DART, BOOMERANG, HEAVY_BOOMERANG, AIR_GUN, RAPIER }
 
+## 徒手（无武器）：不能开火，只有一个灰色准星。关卡设置 / 武器替换区域可以把主武器设成它。
+## 不放进 Type 枚举（枚举值是 0 起的武器序号），单独用 -1 表示。
+const NONE := -1
+
 ## 刺剑（RAPIER）：向准心冲刺（复用反冲冲刺 apply_dash，方向取 +瞄准方向），
 ##   thrust_speed × dash_time ≈ 冲刺距离；冲刺期间身体 + 刀身（blade_len × blade_width）扫掠击杀，
 ##   对守卫无敌，结束后再无敌 invincible_grace 秒；高压电照样致死。
 ##   空中只能刺 air_uses 次，落地或刺杀敌人后刷新。
 
 const DATA := {
+	NONE: {
+		"name": "徒手", "color": Color(0.62, 0.6, 0.78),   # 环境亮度：不发光
+		"shake": 0.0, "shake_time": 0.0,
+	},
 	Type.DART: {
 		"name": "飞镖", "color": Palette.DART,
 		"range": 320.0,            # 射程
@@ -70,7 +78,11 @@ const DATA := {
 
 
 static func get_def(t: int) -> Dictionary:
-	return DATA[t]
+	return DATA.get(t, DATA[NONE])
+
+
+static func is_none(t: int) -> bool:
+	return t == NONE
 
 
 static func is_boomerang(t: int) -> bool:

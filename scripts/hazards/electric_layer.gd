@@ -10,10 +10,17 @@ extends TileMapLayer
 var renderer: ElectricRenderer
 
 
+## 登记放在 _enter_tree 而不是 _ready：启动场景（F5 / F6）会被 PixelView reparent 进 SubViewport，
+## reparent 会先 _exit_tree 再 _enter_tree，但 _ready 不会再跑。以前在 _ready 里登记、
+## _exit_tree 里注销，结果刚启动时电层被注销，电块形同虚设，死一次重开后才恢复。
+func _enter_tree() -> void:
+	if not Engine.is_editor_hint():
+		Game.register_electric(self)
+
+
 func _ready() -> void:
 	if Engine.is_editor_hint():
 		return
-	Game.electric = self
 	visible = false            # 隐藏后格子数据仍可查询
 	renderer = ElectricRenderer.new()
 	renderer.name = name + "Renderer"
@@ -30,5 +37,5 @@ func _move_renderer() -> void:
 
 
 func _exit_tree() -> void:
-	if not Engine.is_editor_hint() and Game.electric == self:
-		Game.electric = null
+	if not Engine.is_editor_hint():
+		Game.unregister_electric(self)

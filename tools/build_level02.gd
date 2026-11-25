@@ -9,22 +9,25 @@ extends "res://tools/build_art.gd"
 ## 图例：# 墙  ~ 高压电  P 玩家  G 地面守卫(朝右)  g 地面守卫(朝左)  F 无人机
 ##       A 气枪拾取  Z 刺剑替换区(1×3，字符在最下一格)  D 飞镖替换区  E 出口
 
-const MAP_PATH := "res://tools/art/map_level02.txt"
-const OUT_PATH := "res://levels/level_02.tscn"
+## 子类（如 build_level06.gd）在 _init 里改这三个值，复用同一套生成流程
+var map_path := "res://tools/art/map_level02.txt"
+var out_path := "res://levels/level_02.tscn"
+var level_name := "Level02"
 const ELECTRIC_TS := "res://assets/tiles/electric_tileset.tres"
 
 
 func _ready() -> void:
-	if FileAccess.file_exists(OUT_PATH) and not "--force" in OS.get_cmdline_user_args():
-		print("[level02] 已存在，跳过：", OUT_PATH)
+	if FileAccess.file_exists(out_path) and not "--force" in OS.get_cmdline_user_args():
+		print("[level02] 已存在，跳过：", out_path)
 		get_tree().quit()
 		return
 	_load_masks()
 	var ts: TileSet = load(TILESET_PATH)
-	var rows := FileAccess.get_file_as_string(MAP_PATH).strip_edges().split("\n")
+	var rows := FileAccess.get_file_as_string(map_path).strip_edges().split("\n")
 	var root := Node2D.new()
-	root.name = "Level02"
+	root.name = level_name
 	root.set_script(load("res://scripts/level.gd"))
+	_configure_root(root)
 	_add_env(root)
 	var tm := TileMapLayer.new()
 	tm.name = "Walls"
@@ -53,9 +56,14 @@ func _ready() -> void:
 	_dress(root, tm)
 	var ps := PackedScene.new()
 	ps.pack(root)
-	print("[level02] ", OUT_PATH, " -> ", ResourceSaver.save(ps, OUT_PATH))
+	print("[level02] ", out_path, " -> ", ResourceSaver.save(ps, out_path))
 	root.free()
 	get_tree().quit()
+
+## 子类覆盖：写关卡设置等根节点属性
+func _configure_root(_root: Node) -> void:
+	pass
+
 
 ## 只读 street_tiles.json 的掩码表（_repaint 要用），不重存 TileSet
 func _load_masks() -> void:

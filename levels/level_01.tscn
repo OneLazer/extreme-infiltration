@@ -72,6 +72,7 @@ blend_mode = 1
 
 [node name="Level01" type="Node2D" unique_id=363100469]
 script = ExtResource("1_qdeet")
+initial_weapon = 1
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=10251281]
 environment = SubResource("Environment_6g61c")
@@ -515,5 +516,4 @@ position = Vector2(28, 163)
 
 [node name="DebugOverlay" type="Node" parent="." unique_id=1745182913]
 script = ExtResource("13_dbg0")
-initial_weapon = 1
 show_panel = false

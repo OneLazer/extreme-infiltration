@@ -12,8 +12,8 @@ const TILE := 8.0           # 图格像素尺寸
 
 var player: Player
 var level: Level
-## 当前关卡的高压电层（ElectricLayer 在 _ready 里登记），没有则为 null
-var electric: TileMapLayer
+## 当前关卡的高压电层（ElectricLayer 在 _enter_tree 里登记，可以有多层），没有则为空
+var electric_layers: Array[TileMapLayer] = []
 ## 瞄准冻结期间为 true。守卫、回旋镖等在冻结时暂停逻辑。
 var frozen := false
 
@@ -26,24 +26,50 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 
 
+func register_electric(layer: TileMapLayer) -> void:
+	if not electric_layers.has(layer):
+		electric_layers.append(layer)
+
+
+func unregister_electric(layer: TileMapLayer) -> void:
+	electric_layers.erase(layer)
+
+
 ## 某个点是否在高压电格里
 func is_electric(p: Vector2) -> bool:
-	if not is_instance_valid(electric):
-		return false
-	return electric.get_cell_source_id(electric.local_to_map(electric.to_local(p))) >= 0
+	for e in electric_layers:
+		if is_instance_valid(e) and e.get_cell_source_id(e.local_to_map(e.to_local(p))) >= 0:
+			return true
+	return false
 
 
 ## 矩形（全局坐标）是否碰到任何高压电格
 func electric_overlaps(r: Rect2) -> bool:
-	if not is_instance_valid(electric) or r.size.x <= 0.0 or r.size.y <= 0.0:
+	if r.size.x <= 0.0 or r.size.y <= 0.0:
 		return false
-	var a := electric.local_to_map(electric.to_local(r.position))
-	var b := electric.local_to_map(electric.to_local(r.end - Vector2(0.001, 0.001)))
-	for y in range(a.y, b.y + 1):
-		for x in range(a.x, b.x + 1):
-			if electric.get_cell_source_id(Vector2i(x, y)) >= 0:
-				return true
+	for e in electric_layers:
+		if not is_instance_valid(e):
+			continue
+		var a := e.local_to_map(e.to_local(r.position))
+		var b := e.local_to_map(e.to_local(r.end - Vector2(0.001, 0.001)))
+		for y in range(a.y, b.y + 1):
+			for x in range(a.x, b.x + 1):
+				if e.get_cell_source_id(Vector2i(x, y)) >= 0:
+					return true
 	return false
+
+
+## 矩形 r 沿 motion 平移的路径上第一次碰到电格的位置比例（0..1），没碰到返回 -1。
+## 按 2px 步长采样（受击框最窄 4px，不会漏掉一整格）。瞬移类位移（飞镖）用它查路径。
+func electric_sweep(r: Rect2, motion: Vector2) -> float:
+	if electric_layers.is_empty():
+		return -1.0
+	var steps := maxi(int(ceil(motion.length() / 2.0)), 1)
+	for i in steps + 1:
+		var f := float(i) / steps
+		if electric_overlaps(Rect2(r.position + motion * f, r.size)):
+			return f
+	return -1.0
 
 
 ## 顿帧：整个游戏停 sec 秒（命中、击杀的重量感）。重叠时取更晚的结束时刻。
