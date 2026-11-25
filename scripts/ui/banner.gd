@@ -54,7 +54,7 @@ func _draw() -> void:
 	draw_string(font, Vector2(x, 91), shown, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color(Palette.W3, k))
 	if n >= _title.length() and _sub != "":
 		# 纯数字用 m6x11，含中文用缝合像素 12px（画在 6 单位 = 半个游戏像素一格）
-		var ascii := _sub.to_ascii_buffer().size() == _sub.length()
+		var ascii := UiKit.is_ascii(_sub)   # to_ascii_buffer 遇到中文会刷错误日志
 		var f2 := UiFonts.num() if ascii else UiFonts.text()
 		var fs := 8 if ascii else 6
 		var sw := f2.get_string_size(_sub, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x

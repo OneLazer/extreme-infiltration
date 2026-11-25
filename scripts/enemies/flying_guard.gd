@@ -112,6 +112,7 @@ func _on_alert_full(p: Player) -> void:
 ## 通知范围内的其他守卫，并画出「信号线」让玩家看清是谁被叫来了
 func _raise_alarm(at: Vector2) -> void:
 	_siren = 1.0
+	Sfx.play("alarm")
 	var eye := global_position + _eye()
 	Juice.ring(eye, 14.0, Palette.ALERT, 0.3)
 	Juice.ring(eye, 30.0, Palette.ALERT * Color(0.6, 0.6, 0.6), 0.5)

@@ -21,11 +21,12 @@ var _kick := Vector2.ZERO           ## 方向性镜头推移（开火、击杀�
 
 ## 镜头朝某个方向推一下（单位：画布像素），叠加在震动之上
 func kick(v: Vector2) -> void:
-	_kick += v
+	_kick += v * Settings.shake_mult     # 设置「屏幕震动」档位
 	_kick = _kick.limit_length(6.0)
 
 
 func shake(strength: float, duration: float) -> void:
+	strength *= Settings.shake_mult       # 设置「屏幕震动」档位，0 = 关闭
 	if strength <= 0.0 or duration <= 0.0:
 		return
 	# 更强的一次接管；较弱的不打断正在进行的震动

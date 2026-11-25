@@ -105,6 +105,7 @@ func _fire(p: Player) -> void:
 	Juice.trace(eye, p.global_position, Palette.ALERT, 2.0, 0.2)
 	Juice.sparks(p.global_position, 8, to, 0.6, 160.0, Palette.ALERT)
 	Juice.ring(eye, 5.0, Palette.ALERT, 0.16)
+	Sfx.play("laser", 0.04)
 	p.die()
 
 

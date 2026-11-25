@@ -122,6 +122,7 @@ func _on_spotted() -> void:
 	_pause_left = 0.0
 	_pop = 1.0
 	Juice.ring(global_position + _eye(), 6.0, Palette.ALERT * Color(0.6, 0.6, 0.6), 0.16)
+	Sfx.play("spot", 0.04)
 
 
 func _on_lost() -> void:
@@ -408,6 +409,7 @@ func kill(dir := Vector2.ZERO) -> void:
 	if dir == Vector2.ZERO:
 		dir = Vector2.UP
 	_death_fx(dir)
+	Sfx.play("kill", 0.08)
 	killed.emit(self)
 	queue_free()
 
@@ -417,6 +419,7 @@ func electrocute() -> void:
 	if dead:
 		return
 	ElectricFx.zap(global_position, _silhouette())
+	Sfx.play("zap", 0.05, -3.0)
 	kill(Vector2.UP)
 
 

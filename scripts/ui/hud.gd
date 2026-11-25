@@ -78,13 +78,16 @@ func _draw() -> void:
 		TinyDigits.draw(self, s[1] if s[1] != "∞" else "", Vector2(x + 6, 9), Palette.N6)
 		x += 13
 	# ---------- 右上：守卫 + 计时 ----------
-	var r := Rect2(320 - 78, 0, 78, 15)
+	var show_time := bool(Settings.get_value("show_timer"))     # 设置「显示计时」
+	var pw := 78 if show_time else 30
+	var r := Rect2(320 - pw, 0, pw, 15)
 	_panel(r, true)
 	_guard_icon(Vector2(r.position.x + 6, 4))
 	var gl := level.enemies_left
 	_text_num(str(gl), Vector2(r.position.x + 15, 10), Palette.W3 if gl > 0 else Color(0.4, 2.0, 0.7))
-	var tm := level.time
-	_text_num("%02d:%04.1f" % [int(tm / 60.0), fmod(tm, 60.0)], Vector2(r.position.x + 30, 10), Palette.C3)
+	if show_time:
+		var tm := level.time
+		_text_num("%02d:%04.1f" % [int(tm / 60.0), fmod(tm, 60.0)], Vector2(r.position.x + 30, 10), Palette.C3)
 	if level.countdown_active():
 		_draw_countdown()
 	_draw_toast()

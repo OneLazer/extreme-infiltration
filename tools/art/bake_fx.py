@@ -27,6 +27,7 @@ JOBS = [  # (效果, 配色, 输出名)
     ("kill-burst", "dart", "kill_dart"),
     ("tiny-flare", "rapier", "flare_rapier"), ("tiny-pierce", "rapier", "pierce_rapier"),
     ("tiny-flare", "electric", "flare_electric"), ("tiny-zap", "electric", "zap_electric"),
+    ("ui-spark", "magenta", "ui_spark"), ("ui-burst", "magenta", "ui_burst"),   # 菜单：选中火花、确认爆闪
 ]
 
 

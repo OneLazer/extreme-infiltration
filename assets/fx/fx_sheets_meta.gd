@@ -15,5 +15,7 @@ const SHEETS := {
 	"muzzle_airgun": {"w": 28, "h": 18, "frames": 4, "fps": 30, "pivot": Vector2(2, 9)},
 	"muzzle_dart": {"w": 28, "h": 18, "frames": 4, "fps": 30, "pivot": Vector2(2, 9)},
 	"pierce_rapier": {"w": 64, "h": 28, "frames": 9, "fps": 30, "pivot": Vector2(22, 14)},
+	"ui_burst": {"w": 72, "h": 32, "frames": 10, "fps": 30, "pivot": Vector2(16, 16)},
+	"ui_spark": {"w": 17, "h": 17, "frames": 7, "fps": 30, "pivot": Vector2(8, 8)},
 	"zap_electric": {"w": 64, "h": 64, "frames": 13, "fps": 30, "pivot": Vector2(32, 32)},
 }

@@ -16,6 +16,10 @@ var level: Level
 var electric_layers: Array[TileMapLayer] = []
 ## 瞄准冻结期间为 true。守卫、回旋镖等在冻结时暂停逻辑。
 var frozen := false
+## 主菜单打开时先进哪一页："" = 主页，"credits" = 最后一关通关后的致谢
+var menu_page := ""
+## 本次运行是否已经播过主菜单开机动画（只在启动游戏时播一次）
+var booted := false
 
 var _stop_until := 0.0      # 顿帧结束时刻（秒，真实时间）
 var _slow_until := 0.0
@@ -83,6 +87,21 @@ func slowmo(scale: float, sec: float) -> void:
 	_slow_scale = scale
 	_slow_until = maxf(_slow_until, _now() + sec)
 	_apply()
+
+
+## 回主菜单：盖上转场再切场景。page 见 menu_page
+func to_menu(page := "") -> void:
+	menu_page = page
+	get_tree().paused = false
+	await ScreenFx.wipe_out()
+	PixelView.change_scene(Levels.MENU)
+
+
+## 进入某个场景（关卡）：盖上转场再切
+func goto_scene(path: String) -> void:
+	get_tree().paused = false
+	await ScreenFx.wipe_out()
+	PixelView.change_scene(path)
 
 
 func reset_time() -> void:

@@ -99,6 +99,7 @@ func _on_alert_full(p: Player) -> void:
 	Juice.trace(muzzle, p.global_position, Palette.ALERT, 2.0, 0.2)
 	Juice.sparks(p.global_position, 8, (p.global_position - muzzle), 0.6, 160.0, Palette.ALERT)
 	Juice.shell(muzzle, Vector2(-facing * 40.0, -60.0))
+	Sfx.play("gunshot", 0.05)
 	p.die()
 
 

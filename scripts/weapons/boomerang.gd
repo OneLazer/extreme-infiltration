@@ -110,6 +110,7 @@ func _step_return(delta: float) -> bool:
 	if to_player.length() <= step:
 		var move_dir := to_player.normalized() if to_player != Vector2.ZERO else Vector2.ZERO
 		_sweep_kill(global_position, _player.global_position)
+		Sfx.play("catch", 0.06)
 		_player.on_boomerang_caught(self, move_dir)
 		queue_free()
 		return true
