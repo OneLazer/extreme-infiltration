@@ -1,18 +1,19 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://cm7jgx7tiujhm"]
 
-[ext_resource type="Script" path="res://scripts/enemies/ground_guard.gd" id="1_s"]
-[ext_resource type="Script" path="res://scripts/visual/vision_cone.gd" id="2_cone"]
+[ext_resource type="Script" uid="uid://df7rk0sfia8i3" path="res://scripts/enemies/ground_guard.gd" id="1_s"]
+[ext_resource type="Script" uid="uid://lh0og8d4lhqg" path="res://scripts/visual/vision_cone.gd" id="2_cone"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_1"]
 size = Vector2(8, 12)
 
-[node name="GroundGuard" type="Area2D"]
+[node name="GroundGuard" type="Area2D" unique_id=1827779951]
 collision_layer = 4
 collision_mask = 2
 script = ExtResource("1_s")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1172398043]
 shape = SubResource("RectangleShape2D_1")
 
-[node name="VisionCone" type="Node2D" parent="."]
+[node name="VisionCone" type="Node2D" parent="." unique_id=1344603843]
 script = ExtResource("2_cone")
+edge = 0.3

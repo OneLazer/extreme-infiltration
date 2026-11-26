@@ -6,7 +6,7 @@ extends Node
 ## 关卡已存在时不会覆盖，需覆盖请在命令末尾加：  -- --force
 ##
 ## ASCII 图例：# 墙  P 玩家  G 普通守卫(朝右)  g 普通守卫(朝左)  F 飞行守卫
-##            b 回旋镖  B 重型回旋镖  A 气枪  E 出口
+##            d 飞镖  b 回旋镖  B 重型回旋镖  A 气枪  E 出口
 
 const TILESET_PATH := "res://assets/tiles/neon_tileset.tres"
 const TEXTURE_PATH := "res://assets/tiles/neon_tiles.png"
@@ -172,10 +172,10 @@ func _place(root: Node, ents: Node, scenes: Dictionary, ch: String, x: int, y: i
 		"F":
 			n = scenes["F"].instantiate()
 			n.position = Vector2(cx, y * T + T / 2.0)
-		"b", "B", "A":
+		"d", "b", "B", "A":
 			n = scenes["b"].instantiate()
 			n.position = Vector2(cx, y * T + T / 2.0)
-			n.set("weapon_type", {"b": 1, "B": 2, "A": 3}[ch])
+			n.set("weapon_type", {"d": 0, "b": 1, "B": 2, "A": 3}[ch])
 			n.set("ammo", 3)
 		"E":
 			n = scenes["E"].instantiate()

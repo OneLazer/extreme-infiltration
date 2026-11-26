@@ -9,6 +9,7 @@ extends Node2D
 
 const SHADER := preload("res://shaders/electric.gdshader")
 const STEP := 4.0                 # 轮廓采样间距（px）
+const GLOW := 0.58                # 电弧 HDR 亮度缩放：只压低泛光，不改色相（1 = 原始）
 
 @export var jitter_interval := 0.07       ## 边缘电弧重抖间隔（秒）
 @export var discharge_every := Vector2(1.5, 3.0)  ## 放电间隔的随机范围（秒）
@@ -289,9 +290,9 @@ func _loop_line(l: Dictionary, jit: PackedFloat32Array, base: int) -> PackedVect
 func _draw() -> void:
 	if _layer == null:
 		return
-	var k := 1.0 + _discharge * 1.4
-	var halo_c := Palette.ELECTRIC * Color(0.42 * k, 0.42 * k, 0.42 * k)
-	var core_c := Palette.ELECTRIC * Color(k, k, k)
+	var k := 1.0 + _discharge * 0.5
+	var halo_c := Palette.ELECTRIC * Color(0.24 * k, 0.24 * k, 0.24 * k)
+	var core_c := Palette.ELECTRIC * Color(GLOW * k, GLOW * k, GLOW * k)
 	var base := 0
 	for l in _loops:
 		var n := (l["pts"] as PackedVector2Array).size()
@@ -300,7 +301,7 @@ func _draw() -> void:
 		draw_polyline(core, core_c, 1.0)
 		for i in n:            # 白热段：核心上一小截亮白
 			if _hot[base + i]:
-				draw_line(core[i], core[i + 1], Palette.ELECTRIC_CORE, 1.0)
+				draw_line(core[i], core[i + 1], Palette.ELECTRIC_CORE * Color(GLOW, GLOW, GLOW), 1.0)
 		base += n
 	for b in _bolts:
 		_draw_bolt(b["a"], b["b"], 0.3, true)
@@ -328,15 +329,15 @@ func _draw_bolt(a: Vector2, b: Vector2, jag: float, big: bool) -> void:
 		var side := PackedVector2Array()
 		for q in pts:
 			side.append(q + Vector2(0, 1))
-		draw_polyline(side, Palette.ELECTRIC * Color(0.5, 0.5, 0.5), 1.0)
-		draw_polyline(pts, Palette.ELECTRIC_CORE, 1.0)
+		draw_polyline(side, Palette.ELECTRIC * Color(0.3, 0.3, 0.3), 1.0)
+		draw_polyline(pts, Palette.ELECTRIC_CORE * Color(GLOW, GLOW, GLOW), 1.0)
 	else:
-		draw_polyline(pts, Palette.ELECTRIC, 1.0)
+		draw_polyline(pts, Palette.ELECTRIC * Color(GLOW, GLOW, GLOW), 1.0)
 
 
 ## 加色光带：沿轮廓画一条宽而淡的光，给周围墙面打一点电光
 func _draw_halo() -> void:
-	var k := 0.05 + _discharge * 0.12
+	var k := 0.03 + _discharge * 0.06
 	var c := Color(Palette.ELECTRIC.r * k, Palette.ELECTRIC.g * k, Palette.ELECTRIC.b * k, 1.0)
 	for l in _loops:
 		var pts: PackedVector2Array = (l["pts"] as PackedVector2Array).duplicate()

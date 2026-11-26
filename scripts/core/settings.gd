@@ -5,6 +5,7 @@ extends Node
 ##   fullscreen  全屏（否则窗口）        window_scale  窗口整数倍 2..6
 ##   vsync       垂直同步               post_fx       后期（暗角、扫描线、颗粒、色差）
 ##   shake       屏幕震动 0..10 档      flash         闪光强度 0..10 档（闪白、色差脉冲）
+##   glow        辉光强度 0..10 档（乘在场景 WorldEnvironment 的辉光上，0 = 关闭）
 ##   show_timer  HUD 计时               music / sfx   音乐、音效开关
 ##   unlock_all  解锁全部关卡（测试用）
 
@@ -13,7 +14,7 @@ signal changed(key: String)
 const PATH := "user://settings.cfg"
 const DEFAULTS := {
 	"fullscreen": false, "window_scale": 4, "vsync": true, "post_fx": true,
-	"shake": 10, "flash": 10, "show_timer": true,
+	"shake": 10, "flash": 10, "glow": 10, "show_timer": true,
 	"music": true, "sfx": true, "unlock_all": false,
 }
 const BASE := Vector2i(320, 180)
@@ -31,6 +32,10 @@ func _ready() -> void:
 		for k in DEFAULTS:
 			_v[k] = cf.get_value("settings", k, DEFAULTS[k])
 	_apply_all(had_file)
+	# 辉光：每个进树的 WorldEnvironment（关卡、主菜单）都乘上辉光档位
+	get_tree().node_added.connect(_on_node_added)
+	for n in get_tree().root.find_children("*", "WorldEnvironment", true, false):
+		_on_node_added(n)
 
 
 func get_value(key: String) -> Variant:
@@ -59,6 +64,10 @@ var shake_mult: float:
 var flash_mult: float:
 	get:
 		return float(get_value("flash")) / 10.0
+
+var glow_mult: float:
+	get:
+		return float(get_value("glow")) / 10.0
 
 
 ## 当前屏幕放得下的最大窗口倍数（留出任务栏和标题栏）
@@ -100,6 +109,35 @@ func _apply(key: String) -> void:
 			_mute("Music", not get_value("music"))
 		"sfx":
 			_mute("SFX", not get_value("sfx"))
+		"glow":
+			for n in get_tree().get_nodes_in_group(GLOW_GROUP):
+				_apply_glow(n as WorldEnvironment)
+
+
+const GLOW_GROUP := &"settings_glow_env"
+const GLOW_BASE := &"_glow_base"     ## Environment 上记的原始值 [enabled, intensity, bloom]
+
+
+func _on_node_added(n: Node) -> void:
+	if n is WorldEnvironment:
+		n.add_to_group(GLOW_GROUP)
+		# 代码里创建的 WorldEnvironment 可能先进树、后赋 environment，晚一拍再读
+		_apply_glow.call_deferred(n)
+
+
+## 按档位缩放辉光强度和泛光。原始值记在 Environment 资源的 meta 上：
+## 同一关卡场景重开时实例共用这份资源，不能每次把已经缩放过的值当成原始值
+func _apply_glow(we: WorldEnvironment) -> void:
+	if not is_instance_valid(we) or we.environment == null:
+		return
+	var env := we.environment
+	if not env.has_meta(GLOW_BASE):
+		env.set_meta(GLOW_BASE, [env.glow_enabled, env.glow_intensity, env.glow_bloom])
+	var base: Array = env.get_meta(GLOW_BASE)
+	var m := glow_mult
+	env.glow_enabled = bool(base[0]) and m > 0.0
+	env.glow_intensity = float(base[1]) * m
+	env.glow_bloom = float(base[2]) * m
 
 
 func _apply_window() -> void:

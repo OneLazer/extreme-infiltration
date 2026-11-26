@@ -25,6 +25,8 @@
 - 选关预览直接实例化关卡场景读数据（墙体、高压电、守卫、出口、起点、武器），改关卡后预览自动更新。
 - 设置项在 `settings_page.gd` 顶部的 `TABS` 表里，加一项只要加一行字典，并在 `Settings.DEFAULTS` 里给默认值。
 - 屏幕震动档位乘在 `ScreenShake.shake/kick` 上，闪光强度乘在 `ScreenFx.pulse/flash` 上；「后期效果」只关暗角、扫描线、颗粒。
+- 辉光强度：`Settings` 监听进树的每个 `WorldEnvironment`（关卡和主菜单），把场景里写的 `glow_intensity / glow_bloom` 乘上档位，0 档关掉 `glow_enabled`。原始值记在 Environment 的 meta `_glow_base` 上，所以关卡里照常按 100% 调辉光即可。`GlowSpot`、`LightCone` 是加色光斑，不受这一项影响。
+- 清空游戏存档（「游戏」分页）：`Progress.clear()`，只清 `save.cfg` 的解锁进度和最佳用时，不动设置。弹出二次确认框，默认选「取消」，「清空」按钮打开 0.4 秒后才能按（防止连按穿透）；没有存档时这一行变灰。
 - `ScreenFx` 新增 `crt_on / crt_off`（显像管开关机，`shaders/crt.gdshader`）和 `set_pause`（暂停去色，`post.gdshader` 的 `pause`）。
 
 ## 音效

@@ -34,6 +34,9 @@ var _pause_target := 0.0
 var _crt: ShaderMaterial
 var _crt_rect: ColorRect
 var _crt_p := 0.0
+## 每次 wipe_in（新关卡开始）加一。死亡倒带期间按 R 重开时，还在跑的 death_rewind
+## 看到序号变了就退出，不再把去色和倒带写回去（否则滤镜会一直挂着）
+var _seq := 0
 
 
 func _ready() -> void:
@@ -119,6 +122,7 @@ func danger(k: float) -> void:
 
 ## 新关卡开始：从左往右揭开；去色和倒带清零
 func wipe_in() -> void:
+	_seq += 1
 	_desat = 0.0
 	_rewind = 0.0
 	_wipe.set_shader_parameter("dir", 1.0)
@@ -137,14 +141,19 @@ func wipe_out() -> void:
 
 ## 死亡：画面去色、色差拉满，接着 VHS 倒带干扰，完成后返回
 func death_rewind() -> void:
+	var id := _seq
 	var t0 := _now()
 	while _now() - t0 < 0.32:
+		if id != _seq:
+			return
 		var k := (_now() - t0) / 0.32
 		_desat = k * 0.85
 		_ab = 3.0
 		await get_tree().process_frame
 	t0 = _now()
 	while _now() - t0 < 0.42:
+		if id != _seq:
+			return
 		_rewind = clampf((_now() - t0) / 0.12, 0.0, 1.0)
 		_desat = 0.85
 		await get_tree().process_frame

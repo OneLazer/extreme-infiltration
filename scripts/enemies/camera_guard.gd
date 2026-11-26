@@ -46,6 +46,13 @@ func eye_global() -> Vector2:
 	return global_position + normal() * DOME.y * 0.5 + look_dir() * 2.0
 
 
+## 辅助瞄准的瞄准点 = 碰撞盒中心（沿离墙方向让开半个机身）。
+## 节点原点贴死在墙面 / 地板 / 天花板上，直接拿原点做视线检测会被墙本身判成「隔墙」，
+## 于是所有武器的宽容判定都对摄像头失效。
+func aim_point() -> Vector2:
+	return global_position + normal() * DOME.y * 0.5
+
+
 func _eye() -> Vector2:
 	return eye_global() - global_position
 

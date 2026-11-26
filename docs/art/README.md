@@ -20,6 +20,7 @@
 | `bake_fx.py <pixelfx 路径>` | `assets/fx/`：用 pixelfx 烘焙枪口火光、命中闪光、击杀爆闪、刺剑穿刺星芒、电击爆闪（需要 Node 18+） |
 | `gen_electric.py` | `assets/tiles/electric_tile.png`：高压电块在编辑器里的预览瓦片（运行时隐藏） |
 | `style_frame.py` | 风格样张合成图 |
+| `key_art.py` | 16:9 宣传主视觉 `docs/art/key_art_1920x1080.png` / `key_art_3840x2160.png`（240×135 画布整数倍放大，只有标题字组） |
 
 改完图集后在 Godot 里运行 `tools/build_art.tscn`（F6）：重建 TileSet、背景场景，并给关卡换上新墙体与背景墙。
 关卡里已有 `Decor` 节点时不会重新摆放装饰；要重摆，命令行加 `-- --redress`，或者先删掉 `Decor` 节点。
@@ -40,7 +41,7 @@
 ## 特效入口
 
 - `scripts/fx/juice.gd`：尘土、硝烟、火花、碎片、机油、弹壳、冲击环、弹道、残影、序列帧闪光，静态函数调用。
-- `scripts/visual/player_visual.gd`：玩家动画、挤压拉伸、围巾绳模拟、手持武器，以及跳跃/落地/开火/瞬移/死亡特效。
+- `scripts/visual/player_visual.gd`：玩家动画、挤压拉伸、围巾布条（位置平滑，无惯性过冲）、手持武器，以及跳跃/落地/开火/瞬移/死亡特效。
 - `scripts/game.gd`：`Game.hitstop(秒)` 顿帧、`Game.slowmo(倍率, 秒)` 慢动作。
 - `scripts/ui/screen_fx.gd`（autoload `ScreenFx`）：色差脉冲、闪白、死亡倒带、转场、守卫快满条时的红色危险暗角（`danger(k)`）。`enabled = false` 可关掉后期。
 - `scripts/hazards/electric_fx.gd`：电击（剪影红白闪 + 电弧爆闪 + 火花），玩家和无人机被电死时用。

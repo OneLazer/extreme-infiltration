@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://bsjuwbd5o2gtn"
+path="res://.godot/imported/Neon-Noir Tension.mp3-b25cf8f6468b63af01ae90b8b6f4e6bb.mp3str"
+
+[deps]
+
+source_file="res://assets/sfx/Neon-Noir Tension.mp3"
+dest_files=["res://.godot/imported/Neon-Noir Tension.mp3-b25cf8f6468b63af01ae90b8b6f4e6bb.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

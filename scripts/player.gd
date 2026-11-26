@@ -234,6 +234,7 @@ func _normal_update(delta: float, on_ground: bool) -> void:
 
 	# 起跳 / 蹬墙跳 / 二段跳
 	# 土狼时间内的跳走 _jump()，和落地跳是同一条分支，所以不消耗二段跳
+	# 贴墙时按不按方向键都算蹬墙跳，只是按墙方向 / 不按不锁方向（见 _wall_jump）
 	if _jump_buffer_timer > 0.0:
 		if _jump_grace_timer > 0.0:
 			_jump()
@@ -278,12 +279,15 @@ func air_jumps_left() -> int:
 
 
 ## dir：跳离方向（墙在 -dir 一侧）
+## 只有按住「离墙方向」才锁定移动方向（wall_jump_force_time）。
+## 不按方向键的中性蹬墙跳，以及按住墙面方向（_move_x == -dir）的蹬墙跳都不锁，
+## 起跳后立刻按回墙面就能马上生效，不会被 0.16s 的方向锁拖着往墙外走。
 func _wall_jump(dir: int) -> void:
 	_jump_buffer_timer = 0.0
 	_jump_grace_timer = 0.0
 	_var_jump_timer = var_jump_time
 	_wall_slide_timer = wall_slide_time
-	if _move_x != 0:
+	if _move_x == dir:
 		_force_move_x = dir
 		_force_move_x_timer = wall_jump_force_time
 	velocity.x = (max_run + jump_h_boost) * dir
@@ -524,8 +528,8 @@ func _hitscan(dir: Vector2, max_range: float, band_tiles: float) -> Dictionary:
 	# 中心线没打中敌人（可能先撞到墙）：墙不参与宽容判定，只用来兜底落点
 	var target := _assist_target(dir, max_range, band_tiles)
 	if target != null:
-		# 偏折方向 = 玩家 → 敌人中心；起点仍是玩家中心，所以只是绕玩家转了一个小角度
-		var shot := (target.global_position - from).normalized()
+		# 偏折方向 = 玩家 → 敌人瞄准点；起点仍是玩家中心，所以只是绕玩家转了一个小角度
+		var shot := (target.aim_point() - from).normalized()
 		var reach := _ray(from, from + shot * max_range, Game.LAYER_ENEMY)
 		if not reach.is_empty():
 			return {"dir": shot, "end": reach.position, "enemy": reach.collider as Guard, "hit": true, "normal": reach.normal}
@@ -546,6 +550,8 @@ func _assist_tiles(def: Dictionary) -> float:
 
 ## 在宽容矩形里挑目标：横向偏移最小的敌人优先（更贴近玩家瞄的方向），
 ## 偏移相同则取更近的。和玩家之间隔着墙的敌人不算 —— 不能隔墙打。
+## 判定用 aim_point() 而不是节点原点：监控守卫的原点埋在墙面里，
+## 拿原点做视线检测会被墙体本身挡住，导致宽容判定永远挑不中摄像头。
 func _assist_target(dir: Vector2, max_range: float, band_tiles: float) -> Guard:
 	var half := band_tiles * Game.TILE * 0.5
 	if half <= 0.0:
@@ -565,7 +571,8 @@ func _assist_target(dir: Vector2, max_range: float, band_tiles: float) -> Guard:
 		var g := hit["collider"] as Guard
 		if g == null or g.dead:
 			continue
-		var to := g.global_position - global_position
+		var at := g.aim_point()
+		var to := at - global_position
 		var along := to.dot(dir)                # 沿瞄准线的前后距离
 		if along <= 0.0 or along > max_range:
 			continue
@@ -575,7 +582,7 @@ func _assist_target(dir: Vector2, max_range: float, band_tiles: float) -> Guard:
 			better = along < best_along
 		if not better:
 			continue
-		if not _ray(global_position, g.global_position, Game.LAYER_WORLD).is_empty():
+		if not _ray(global_position, at, Game.LAYER_WORLD).is_empty():
 			continue
 		best = g
 		best_lateral = lateral
@@ -668,7 +675,7 @@ func _throw_boomerang(type: int, dir: Vector2, def: Dictionary) -> void:
 	var target := _assist_target(dir, out_range, _assist_tiles(def))
 	var throw_dir := dir
 	if target != null:
-		throw_dir = (target.global_position - global_position).normalized()
+		throw_dir = (target.aim_point() - global_position).normalized()
 	var b := Boomerang.new()
 	b.setup(self, type, throw_dir, def)
 	get_parent().add_child(b)

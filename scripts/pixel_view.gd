@@ -19,6 +19,9 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	container = SubViewportContainer.new()
 	container.name = "PixelContainer"
+	# 本节点是 ALWAYS（切关、收养场景不能被暂停卡住），但游戏世界必须能被暂停：
+	# 不显式设成 PAUSABLE 的话，SubViewport 里的关卡会继承 ALWAYS，ESC 暂停时照样跑
+	container.process_mode = Node.PROCESS_MODE_PAUSABLE
 	container.stretch = true
 	container.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	container.set_anchors_preset(Control.PRESET_FULL_RECT)

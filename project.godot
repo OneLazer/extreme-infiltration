@@ -23,6 +23,7 @@ ScreenFx="*res://scripts/ui/screen_fx.gd"
 Settings="*res://scripts/core/settings.gd"
 Progress="*res://scripts/core/progress.gd"
 Sfx="*res://scripts/core/sfx.gd"
+Music="*res://scripts/core/music.gd"
 
 [display]
 

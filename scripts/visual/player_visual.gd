@@ -16,6 +16,11 @@ const ANIM := {"idle": [0, 4, 5.0], "run": [4, 4, 12.0], "jump": [8, 1, 1.0], "f
 @export var scarf_segments := 7
 @export var scarf_seg_len := 1.75
 @export_range(0.0, 1.0) var scarf_thick_ratio := 0.5   ## 围巾前多少比例的段画成 2px 粗
+@export var scarf_approach := 150.0     ## 每段追向目标位置的速度（px/s）：越大越跟手，越小越飘
+@export_range(0.0, 1.5) var scarf_lean := 0.45   ## 垂下时向后倾的横向比例（0 = 完全垂直）
+@export var scarf_drag := 0.0045        ## 速度把围巾压平的程度（按速度 1px/s 计）
+@export var scarf_tip_droop := 0.7      ## 尾端比根部更垂的比例：速度把它吹平时，尾巴仍然往下坠（0 = 一条直棍）
+@export var scarf_max_stretch := 1.55   ## 被甩开时每段最多拉长到几倍
 @export var ghost_interval := 0.045     ## 冲刺残影间隔（秒）
 
 var _p: Player
@@ -33,7 +38,7 @@ var _step_t := 0.0
 var _slide_t := 0.0
 var _was_dashing := false
 var _scarf: PackedVector2Array = []
-var _scarf_prev: PackedVector2Array = []
+var _scarf_face := 1.0          # 围巾自己的朝向（浮点），翻转时缓一下，免得整条围巾瞬间抽一下
 var _t := 0.0
 var _blade_t := 0.0             # 刺剑出刺后经过的时间（刀身弹出动画）
 
@@ -52,9 +57,10 @@ func _ready() -> void:
 	_gun.region_enabled = true
 	_gun.centered = false
 	add_child(_gun)
+	# 一开始就按垂下的一串摆好，别从后颈那一点「长」出来
+	var neck := _p.global_position + Vector2(0, FEET - 7.0)
 	for i in scarf_segments:
-		_scarf.append(_p.global_position)
-		_scarf_prev.append(_p.global_position)
+		_scarf.append(neck + Vector2(-_scarf_face * scarf_lean, 1.0).normalized() * scarf_seg_len * i)
 	_p.jumped.connect(_on_jumped)
 	_p.landed.connect(_on_landed)
 	_p.shot.connect(_on_shot)
@@ -186,26 +192,35 @@ func _update_ground_fx(delta: float, on_floor: bool, v: Vector2, moving_input: b
 		_slide_t = 0.07
 		var wall := _p.global_position + Vector2(_p._wall_slide_dir * 3.0, randf_range(-3.0, 3.0))
 		Juice.dust(wall, 1, Vector2(-_p._wall_slide_dir, 0.6), 12.0, 1.0)
-## 围巾：verlet 绳。根部钉在后颈，惯性 + 重力 + 一点逆风飘动
+## 围巾：位置平滑的布条（同《蔚蓝》的头发）。每段只朝「上一段 + 一段的步进」按固定速度挪过去，
+## 不带任何惯性速度 —— 所以不会过冲、不会来回荡；只会在加速/转向时被甩开一点，然后自己慢慢收回来。
+## 以前是 verlet 绳：靠上一帧的位移当速度，回弹过头就一直在抖，看起来像根轻飘的丝带。
 func _update_scarf(delta: float) -> void:
-	var anchor := global_position + Vector2(-_face * 3.0, FEET - 7.0 * _scale.y - 1.0)
+	# 朝向翻转时也让围巾根慢慢滑过去，不要瞬间从后颈一边抽到另一边
+	_scarf_face = move_toward(_scarf_face, float(_face), delta * 9.0)
+	var anchor := global_position + Vector2(-_scarf_face * 3.0, FEET - 7.0 * _scale.y - 1.0)
 	_scarf[0] = anchor
-	_scarf_prev[0] = anchor
-	# 站着时也向后飘：逆风 + 两个频率叠加的抖动，速度越快飘得越平
-	var flutter := sin(_t * 7.0) * 14.0 + sin(_t * 12.3) * 7.0
-	var wind := Vector2(-_face * 70.0 - _p.velocity.x * 0.35, flutter - 10.0)
-	var acc := (Vector2(0, 95.0) + wind) * delta * delta
-	var damp := pow(0.86, delta * 60.0)   # 按 60fps 标定，帧率无关
+	# 步进方向：往下垂，加一点向后（逆风）的倾角；速度越快越被压平，像被风托着
+	var hang := Vector2(-_scarf_face * scarf_lean, 1.0)
+	var lean := hang - Vector2(_p.velocity.x, _p.velocity.y * 0.45) * scarf_drag
+	# 很慢很轻的呼吸摆动，整条一起晃，不做高频抖动（像素绘制会把亚像素抖动放大成 1px 跳，所以幅度压得很小）
+	lean.x += sin(_t * 1.7) * 0.055 + sin(_t * 2.9 + 1.9) * 0.025
+	var move := scarf_approach * delta
+	var max_len := scarf_seg_len * scarf_max_stretch
+	var n := maxf(1.0, float(_scarf.size() - 1))
 	for i in range(1, _scarf.size()):
-		var cur := _scarf[i]
-		_scarf[i] = cur + (cur - _scarf_prev[i]) * damp + acc * (1.0 + i * 0.1)
-		_scarf_prev[i] = cur
-	for _it in 3:
-		for i in range(1, _scarf.size()):
-			var d := _scarf[i] - _scarf[i - 1]
-			var l := d.length()
-			if l > scarf_seg_len and l > 0.0:
-				_scarf[i] = _scarf[i - 1] + d / l * scarf_seg_len
+		# 越靠尾巴越往「自然垂下」的方向收（横向的那份被吹平的回一点），跑起来才是一道弧，不是一根斜棍
+		var k := float(i) / n
+		var sx := lerpf(lean.x, hang.x, k * scarf_tip_droop)
+		# 沿链条往下传的一道慢波，让布有一点点弯，不至于像根直棍
+		sx += sin(_t * 2.4 - i * 0.6) * 0.06
+		var step := Vector2(sx, lean.y).normalized() * scarf_seg_len
+		_scarf[i] = _scarf[i].move_toward(_scarf[i - 1] + step, move)
+		# 被甩开时可以拉长一点，但最多这么多，免得变成一条长线
+		var d := _scarf[i] - _scarf[i - 1]
+		var l := d.length()
+		if l > max_len:
+			_scarf[i] = _scarf[i - 1] + d / l * max_len
 
 
 func _draw() -> void:

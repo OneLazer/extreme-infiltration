@@ -56,6 +56,18 @@ func has_progress() -> bool:
 	return not best.is_empty()
 
 
+## 有没有可清空的东西（设置页「清空游戏存档」据此决定能不能点）
+func has_save() -> bool:
+	return unlocked > 1 or not best.is_empty()
+
+
+## 清空存档：解锁进度回到第一关，最佳用时全部删除。设置不受影响（另存在 settings.cfg）
+func clear() -> void:
+	unlocked = 1
+	best = {}
+	_save()
+
+
 func _save() -> void:
 	var cf := ConfigFile.new()
 	cf.set_value("progress", "unlocked", unlocked)

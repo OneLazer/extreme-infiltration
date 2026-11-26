@@ -123,10 +123,10 @@ func _place_entity(root: Node, ents: Node, ch: String, x: int, y: int) -> void:
 		"F":
 			n = load("res://scenes/flying_guard.tscn").instantiate()
 			n.position = Vector2(cx, y * T + T / 2.0)
-		"A":
+		"d", "A":
 			n = load("res://scenes/weapon_pickup.tscn").instantiate()
 			n.position = Vector2(cx, y * T + T / 2.0)
-			n.set("weapon_type", 3)
+			n.set("weapon_type", 0 if ch == "d" else 3)
 			n.set("ammo", 3)
 		"Z", "D":
 			n = load("res://scenes/weapon_zone.tscn").instantiate()

@@ -22,11 +22,13 @@ const TABS := [
 			"desc": "暗角、扫描线和胶片颗粒。死亡、警戒等玩法提示不受影响。"},
 		{"key": "shake", "label": "屏幕震动", "type": "slider", "desc": "开火、击杀、落地时镜头晃动的幅度。0% 为关闭。"},
 		{"key": "flash", "label": "闪光强度", "type": "slider", "desc": "击杀闪白和色差脉冲的强度。对闪光敏感可以调低。"},
-		{"label": "恢复默认", "type": "reset", "keys": ["fullscreen", "window_scale", "vsync", "post_fx", "shake", "flash"],
+		{"key": "glow", "label": "辉光强度", "type": "slider",
+			"desc": "霓虹、屏幕、武器等发光物周围的泛光。0% 为关闭，画面更锐利，也更省显卡。"},
+		{"label": "恢复默认", "type": "reset", "keys": ["fullscreen", "window_scale", "vsync", "post_fx", "shake", "flash", "glow"],
 			"desc": "把本页设置恢复为默认值。"},
 	]},
 	{"name": "声音", "rows": [
-		{"key": "music", "label": "音乐", "type": "toggle", "desc": "背景音乐开关。当前版本还没有背景音乐，加入后即生效。"},
+		{"key": "music", "label": "音乐", "type": "toggle", "desc": "背景音乐开关。"},
 		{"key": "sfx", "label": "音效", "type": "toggle", "desc": "动作、武器、守卫与界面音效。"},
 		{"label": "恢复默认", "type": "reset", "keys": ["music", "sfx"], "desc": "把本页设置恢复为默认值。"},
 	]},
@@ -34,6 +36,8 @@ const TABS := [
 		{"key": "show_timer", "label": "显示计时", "type": "toggle", "desc": "关卡右上角的用时。关闭后通关时间照常记录。"},
 		{"key": "unlock_all", "label": "解锁全部关卡", "type": "toggle",
 			"desc": "不用按顺序通关，直接开放全部关卡。不改动存档里的进度。"},
+		{"label": "清空游戏存档", "type": "wipe",
+			"desc": "删除全部通关记录和最佳用时，关卡重新从 001 开始解锁。设置不受影响。此操作不能撤销。"},
 		{"label": "恢复默认", "type": "reset", "keys": ["show_timer", "unlock_all"], "desc": "把本页设置恢复为默认值。"},
 	]},
 	{"name": "操作", "rows": [
@@ -50,6 +54,17 @@ var tab := 0
 var _anim := {}             ## 开关滑动动画：key → 0..1
 var _pop := {}              ## 分段条弹跳：key → [格子序号, 剩余]
 var _tab_k := 1.0           ## 换分页时行内容淡入
+
+## 「清空游戏存档」二次确认框。打开时吞掉所有输入，默认选中「取消」；
+## 「清空」按钮要等 ARM 秒才能按，防止连按确认键一路穿过去
+const DLG := Rect2(86, 64, 148, 54)
+const DLG_BTN := [Rect2(104, 101, 50, 11), Rect2(166, 101, 50, 11)]   ## 取消 / 清空
+const ARM := 0.4
+var _dlg := false
+var _dlg_sel := 0
+var _dlg_k := 0.0           ## 弹出动画 0..1
+var _dlg_t := 0.0           ## 打开后经过的时间
+var _wiped := 0.0           ## 清空后说明框显示「存档已清空」的剩余时间
 
 
 func _rows() -> Array:
@@ -80,6 +95,8 @@ func row_enabled(i: int) -> bool:
 	var r := _row(i)
 	if r.get("key", "") == "window_scale":
 		return not Settings.get_value("fullscreen")
+	if r["type"] == "wipe":
+		return Progress.has_save()
 	return true
 
 
@@ -93,6 +110,9 @@ func switch_tab(d: int) -> void:
 
 
 func on_action(a: String) -> void:
+	if _dlg:
+		_dlg_action(a)
+		return
 	match a:
 		"tab_prev":
 			switch_tab(-1)
@@ -113,8 +133,28 @@ func on_action(a: String) -> void:
 			super.on_action(a)
 
 
+func on_mouse(p: Vector2) -> void:
+	if not _dlg:
+		super.on_mouse(p)
+		return
+	var lp := p - Vector2(slide, 0)
+	for b in 2:
+		if DLG_BTN[b].grow(1).has_point(lp) and b != _dlg_sel:
+			_dlg_sel = b
+			Sfx.play("ui_move", 0.04)
+
+
 func on_click(p: Vector2) -> void:
 	var lp := p - Vector2(slide, 0)
+	if _dlg:
+		for b in 2:
+			if DLG_BTN[b].grow(1).has_point(lp):
+				_dlg_sel = b
+				_dlg_action("accept")
+				return
+		if not DLG.has_point(lp):
+			_dlg_action("back")
+		return
 	if row_rect(0).has_point(lp):
 		var t := int((lp.x - X) / (TAB_W + 2))
 		if t >= 0 and t < TABS.size() and t != tab:
@@ -169,6 +209,46 @@ func _adjust(i: int, d: int) -> void:
 			_blink = 0.24
 			Sfx.play("ui_confirm")
 			host.fx("ui_burst", Vector2(X - 2 + slide, row_rect(i).get_center().y))
+		"wipe":
+			if d != 0:
+				return
+			_dlg = true
+			_dlg_sel = 0
+			_dlg_k = 0.0
+			_dlg_t = 0.0
+			Sfx.play("ui_deny")
+			ScreenFx.pulse(0.6)
+
+
+## 确认框里的输入：←→ 换按钮，确认键执行，ESC / 右键 / 点框外 = 取消
+func _dlg_action(a: String) -> void:
+	match a:
+		"left", "right", "tab_prev", "tab_next":
+			var s := 0 if a in ["left", "tab_prev"] else 1
+			if s != _dlg_sel:
+				_dlg_sel = s
+				Sfx.play("ui_move", 0.04)
+		"accept":
+			if _dlg_sel == 0:
+				_close_dlg()
+			elif _dlg_t < ARM:
+				deny()
+			else:
+				Progress.clear()
+				_dlg = false
+				_wiped = 2.5
+				_blink = 0.24
+				Sfx.play("ui_confirm")
+				ScreenFx.pulse(1.2)
+				var rr := row_rect(focus)
+				host.fx("ui_burst", Vector2(X - 2 + slide, rr.get_center().y))
+		"back":
+			_close_dlg()
+
+
+func _close_dlg() -> void:
+	_dlg = false
+	Sfx.play("ui_back")
 
 
 func _apply_value(key: String, value: Variant, _from_click := false) -> void:
@@ -185,6 +265,9 @@ func _apply_value(key: String, value: Variant, _from_click := false) -> void:
 
 func update(dt: float) -> void:
 	_tab_k = minf(_tab_k + dt / 0.15, 1.0)
+	_dlg_k = move_toward(_dlg_k, 1.0 if _dlg else 0.0, dt / 0.12)
+	_dlg_t += dt
+	_wiped = maxf(_wiped - dt, 0.0)
 	for r in _rows():
 		if r.get("type", "") == "toggle":
 			var want := 1.0 if Settings.get_value(r["key"]) else 0.0
@@ -212,7 +295,11 @@ func _draw() -> void:
 	var hints := [[["W", "S"], "选择"], [["A", "D"], "调整"], [["Q", "E"], "分页"], [["ESC"], "返回"]]
 	if not _focusable():
 		hints = [[["Q", "E"], "分页"], [["ESC"], "返回"]]
+	if _dlg:
+		hints = [[["A", "D"], "选择"], [["空格"], "确认"], [["ESC"], "取消"]]
 	UiKit.hints(self, Vector2(20, 164), hints)
+	if _dlg_k > 0.0:
+		_draw_dlg()
 
 
 func _draw_tabs() -> void:
@@ -267,6 +354,12 @@ func _draw_row(i: int, a: float) -> void:
 			UiKit.num(self, Vector2(X + ROW_W - 2 - UiKit.width(UiFonts.num(), pct, 8), y + 8), pct, vc)
 		"reset":
 			UiKit.arrow(self, Vector2(X + ROW_W - 4, y + 5), 1, Color(Palette.C1, a))
+		"wipe":
+			var wc := Color(Palette.P3 if i == focus else Palette.P2, a * (1.0 if en else 0.4))
+			var s := "无存档" if not en else ("已清空" if _wiped > 0.0 else "")
+			if s != "":
+				UiKit.zh(self, Vector2(X + ROW_W - 10 - UiKit.width(UiFonts.text(), s, 6), y + 8), s, vc)
+			UiKit.arrow(self, Vector2(X + ROW_W - 4, y + 5), 1, wc)
 		"keys":
 			var x := X + ROW_W - 2
 			var caps: Array = r["keys"]
@@ -288,6 +381,8 @@ func _draw_desc() -> void:
 		if r.get("key", "") == "window_scale":
 			var s := int(Settings.get_value("window_scale"))
 			text += "\n当前 %d×%d" % [320 * s, 180 * s]
+		elif r["type"] == "wipe" and not row_enabled(focus):
+			text += "\n当前没有存档。"
 	elif not _focusable():
 		text = "键位不能修改。鼠标控制瞄准方向，点击开火。"
 	UiKit.zh(self, DESC.position + Vector2(5, 10), label, Palette.W3)
@@ -295,3 +390,37 @@ func _draw_desc() -> void:
 	var lines := UiKit.wrap(text, DESC.size.x - 10, UiFonts.text(), 6)
 	for li in lines.size():
 		UiKit.zh(self, DESC.position + Vector2(5, 23 + li * 9), lines[li], Color(Palette.C3, 0.9))
+
+
+## 二次确认框：整页压暗，居中面板从中线纵向展开。「清空」用品红，就绪前下沿有一条充能线
+func _draw_dlg() -> void:
+	var k := ease(_dlg_k, 0.4)
+	draw_rect(Rect2(-40, -10, 400, 200), Color(Palette.N0, 0.6 * k))
+	var h := roundf(DLG.size.y * k)
+	var box := Rect2(DLG.position.x, DLG.get_center().y - roundf(h / 2.0), DLG.size.x, h)
+	UiKit.panel(self, box, true, 0.95)
+	draw_rect(Rect2(box.position.x, box.position.y, 2, box.size.y), Palette.P3)
+	if _dlg_k < 1.0:
+		return
+	UiKit.brackets(self, DLG.grow(2), Color(Palette.P3, 0.9), 3)
+	UiKit.zh(self, DLG.position + Vector2(8, 12), "清空游戏存档？", Palette.W3)
+	draw_rect(Rect2(DLG.position.x + 8, DLG.position.y + 15, 12, 1), Color(Palette.P3, 0.8))
+	UiKit.zh(self, DLG.position + Vector2(8, 26), "全部通关记录和最佳用时将被删除，", Color(Palette.C3, 0.9))
+	UiKit.zh(self, DLG.position + Vector2(8, 35), "不能撤销。", Color(Palette.C3, 0.9))
+	var names := ["取消", "清空"]
+	for b in 2:
+		var r: Rect2 = DLG_BTN[b]
+		var on := b == _dlg_sel
+		var danger := b == 1
+		var bg := Color(Palette.P2, 0.9) if on and danger else (Color(Palette.N3, 0.95) if on else Color(Palette.N1, 0.85))
+		var dx := deny_offset() if on and danger else 0.0
+		r.position.x += dx
+		draw_rect(r, bg)
+		var tc := Palette.C4 if on else (Color(Palette.P3, 0.85) if danger else Color(Palette.C1, 1))
+		var w := UiKit.width(UiFonts.text(), names[b], 6)
+		UiKit.zh(self, Vector2(r.position.x + roundf((r.size.x - w) / 2.0), r.position.y + 8), names[b], tc)
+		if on:
+			UiKit.brackets(self, r.grow(1), Palette.P3 if danger else Palette.C2, 2)
+		if danger and _dlg_t < ARM:
+			var fw := roundf(r.size.x * clampf(_dlg_t / ARM, 0.0, 1.0))
+			draw_rect(Rect2(r.position.x, r.end.y, fw, 1), Color(Palette.P3, 0.9))

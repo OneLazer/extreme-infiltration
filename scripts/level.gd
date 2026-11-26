@@ -101,7 +101,9 @@ func _tick_countdown(delta: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event.is_action_pressed("restart"):
+	# 死亡倒带途中按 R = 跳过倒带直接重开（ScreenFx 会作废旧的倒带）。
+	# 通关后正在切下一关时不响应：否则重开后旧的切关协程还挂着，下次转场会突然跳关
+	if event.is_action_pressed("restart") and not _done:
 		PixelView.reload()
 
 
