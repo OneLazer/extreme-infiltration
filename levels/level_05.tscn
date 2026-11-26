@@ -27,6 +27,54 @@ glow_intensity = 0.9
 glow_bloom = 0.05
 glow_blend_mode = 0
 
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_j10hr"]
+blend_mode = 1
+
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_0163i"]
+blend_mode = 1
+
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_nb100"]
+blend_mode = 1
+
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_w6hu8"]
+blend_mode = 1
+
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_ck07j"]
+blend_mode = 1
+
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_4ukmx"]
+blend_mode = 1
+
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_c4ago"]
+blend_mode = 1
+
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_a45jb"]
+blend_mode = 1
+
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_ukmku"]
+blend_mode = 1
+
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_hsx28"]
+blend_mode = 1
+
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_6tpke"]
+blend_mode = 1
+
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_6jcg3"]
+blend_mode = 1
+
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_tkq1q"]
+blend_mode = 1
+
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_ny085"]
+blend_mode = 1
+
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_mskhr"]
+blend_mode = 1
+
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_4gc8e"]
+blend_mode = 1
+
 [node name="Level01" type="Node2D" unique_id=363100469]
 script = ExtResource("1_6q6br")
 initial_weapon = -1
@@ -55,6 +103,7 @@ glow = 1.6
 flicker = 1
 
 [node name="Glow" type="Node2D" parent="Decor" unique_id=309334701]
+material = SubResource("CanvasItemMaterial_j10hr")
 position = Vector2(262, 40)
 script = ExtResource("6_htwx1")
 radius = 22.0
@@ -126,6 +175,7 @@ glow = 1.7
 flicker = 2
 
 [node name="Glow2" type="Node2D" parent="Decor" unique_id=547851742]
+material = SubResource("CanvasItemMaterial_0163i")
 position = Vector2(432, 132)
 script = ExtResource("6_htwx1")
 radius = 16.0
@@ -155,6 +205,7 @@ glow = 1.6
 flicker = 1
 
 [node name="Glow3" type="Node2D" parent="Decor" unique_id=1732709114]
+material = SubResource("CanvasItemMaterial_nb100")
 position = Vector2(517, 136)
 script = ExtResource("6_htwx1")
 radius = 22.0
@@ -173,6 +224,7 @@ prop_name = "lamp"
 glow = 2.2
 
 [node name="LightCone" type="Node2D" parent="Decor" unique_id=272708572]
+material = SubResource("CanvasItemMaterial_w6hu8")
 position = Vector2(32, 15)
 script = ExtResource("6_0vajx")
 length = 153.0
@@ -189,6 +241,7 @@ prop_name = "lamp"
 glow = 2.2
 
 [node name="LightCone2" type="Node2D" parent="Decor" unique_id=195916732]
+material = SubResource("CanvasItemMaterial_ck07j")
 position = Vector2(160, 15)
 script = ExtResource("6_0vajx")
 length = 169.0
@@ -205,6 +258,7 @@ prop_name = "lamp"
 glow = 2.2
 
 [node name="LightCone3" type="Node2D" parent="Decor" unique_id=1433954742]
+material = SubResource("CanvasItemMaterial_4ukmx")
 position = Vector2(224, 15)
 script = ExtResource("6_0vajx")
 length = 169.0
@@ -221,6 +275,7 @@ prop_name = "lamp"
 glow = 2.2
 
 [node name="LightCone4" type="Node2D" parent="Decor" unique_id=762906995]
+material = SubResource("CanvasItemMaterial_c4ago")
 position = Vector2(376, 15)
 script = ExtResource("6_0vajx")
 length = 169.0
@@ -237,6 +292,7 @@ prop_name = "lamp"
 glow = 2.2
 
 [node name="LightCone5" type="Node2D" parent="Decor" unique_id=1254147800]
+material = SubResource("CanvasItemMaterial_a45jb")
 position = Vector2(440, 15)
 script = ExtResource("6_0vajx")
 length = 129.0
@@ -253,6 +309,7 @@ prop_name = "lamp"
 glow = 2.2
 
 [node name="LightCone6" type="Node2D" parent="Decor" unique_id=291075406]
+material = SubResource("CanvasItemMaterial_ukmku")
 position = Vector2(504, 15)
 script = ExtResource("6_0vajx")
 length = 129.0
@@ -269,6 +326,7 @@ prop_name = "lamp"
 glow = 2.2
 
 [node name="LightCone7" type="Node2D" parent="Decor" unique_id=710453213]
+material = SubResource("CanvasItemMaterial_hsx28")
 position = Vector2(568, 15)
 script = ExtResource("6_0vajx")
 length = 113.0
@@ -285,6 +343,7 @@ prop_name = "lamp"
 glow = 2.2
 
 [node name="LightCone8" type="Node2D" parent="Decor" unique_id=649440897]
+material = SubResource("CanvasItemMaterial_6tpke")
 position = Vector2(272, 63)
 script = ExtResource("6_0vajx")
 length = 121.0
@@ -301,6 +360,7 @@ prop_name = "lamp"
 glow = 2.2
 
 [node name="LightCone9" type="Node2D" parent="Decor" unique_id=1270357631]
+material = SubResource("CanvasItemMaterial_6jcg3")
 position = Vector2(616, 111)
 script = ExtResource("6_0vajx")
 length = 73.0
@@ -318,6 +378,7 @@ glow = 1.9
 flicker = 1
 
 [node name="Glow4" type="Node2D" parent="Decor" unique_id=544893829]
+material = SubResource("CanvasItemMaterial_tkq1q")
 position = Vector2(48, 76)
 script = ExtResource("6_htwx1")
 color = Color(1, 0.30980393, 0.6039216, 1)
@@ -336,6 +397,7 @@ glow = 1.9
 flicker = 1
 
 [node name="Glow5" type="Node2D" parent="Decor" unique_id=287667238]
+material = SubResource("CanvasItemMaterial_ny085")
 position = Vector2(288, 92)
 script = ExtResource("6_htwx1")
 color = Color(1, 0.30980393, 0.6039216, 1)
@@ -354,6 +416,7 @@ glow = 1.9
 flicker = 1
 
 [node name="Glow6" type="Node2D" parent="Decor" unique_id=366012945]
+material = SubResource("CanvasItemMaterial_mskhr")
 position = Vector2(536, 68)
 script = ExtResource("6_htwx1")
 color = Color(1, 0.30980393, 0.6039216, 1)
@@ -371,6 +434,7 @@ prop_name = "sign_exit"
 glow = 1.6
 
 [node name="Glow7" type="Node2D" parent="Decor" unique_id=2070641093]
+material = SubResource("CanvasItemMaterial_4gc8e")
 position = Vector2(606, 55)
 script = ExtResource("6_htwx1")
 radius = 18.0
@@ -430,7 +494,7 @@ position = Vector2(565, 120)
 weapon_type = 0
 
 [node name="TextBox" parent="." unique_id=1432330811 instance=ExtResource("18_0vajx")]
-position = Vector2(42, 160)
+position = Vector2(42, 156)
 text = "冲刺可以无视监控守卫的攻击
 同样，你需要解决它们才能通关！
 

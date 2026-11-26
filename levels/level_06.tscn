@@ -23,55 +23,55 @@ glow_intensity = 0.9
 glow_bloom = 0.05
 glow_blend_mode = 0
 
-[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_tcywf"]
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_4ncwt"]
 blend_mode = 1
 
-[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_pku3g"]
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_jepln"]
 blend_mode = 1
 
-[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_g762b"]
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_fk51f"]
 blend_mode = 1
 
-[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_xlogb"]
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_d0fql"]
 blend_mode = 1
 
-[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_1q41s"]
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_dbgp1"]
 blend_mode = 1
 
-[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_4jirp"]
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_ocw3c"]
 blend_mode = 1
 
-[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_wjwxy"]
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_1q5uq"]
 blend_mode = 1
 
-[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_gtmkp"]
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_6vgds"]
 blend_mode = 1
 
-[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_ad157"]
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_fuywf"]
 blend_mode = 1
 
-[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_c3i0m"]
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_16tge"]
 blend_mode = 1
 
-[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_5q4na"]
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_1nphh"]
 blend_mode = 1
 
-[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_gu34l"]
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_ciyj4"]
 blend_mode = 1
 
-[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_yrpmq"]
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_88ktw"]
 blend_mode = 1
 
-[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_sf6pw"]
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_thh07"]
 blend_mode = 1
 
-[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_xktno"]
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_ivanv"]
 blend_mode = 1
 
-[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_qqjfw"]
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_8td5s"]
 blend_mode = 1
 
-[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_icv51"]
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_0tfsk"]
 blend_mode = 1
 
 [node name="Level02" type="Node2D" unique_id=399278731]
@@ -100,7 +100,7 @@ glow = 1.6
 flicker = 1
 
 [node name="Glow" type="Node2D" parent="Decor" unique_id=819967909]
-material = SubResource("CanvasItemMaterial_tcywf")
+material = SubResource("CanvasItemMaterial_4ncwt")
 position = Vector2(462, 88)
 script = ExtResource("6_yi81j")
 radius = 22.0
@@ -120,7 +120,7 @@ glow = 1.6
 flicker = 1
 
 [node name="Glow2" type="Node2D" parent="Decor" unique_id=279612237]
-material = SubResource("CanvasItemMaterial_pku3g")
+material = SubResource("CanvasItemMaterial_jepln")
 position = Vector2(519, 88)
 script = ExtResource("6_yi81j")
 radius = 22.0
@@ -200,7 +200,7 @@ glow = 1.6
 flicker = 1
 
 [node name="Glow3" type="Node2D" parent="Decor" unique_id=859307551]
-material = SubResource("CanvasItemMaterial_g762b")
+material = SubResource("CanvasItemMaterial_fk51f")
 position = Vector2(254, 160)
 script = ExtResource("6_yi81j")
 radius = 22.0
@@ -230,7 +230,7 @@ glow = 1.6
 flicker = 1
 
 [node name="Glow4" type="Node2D" parent="Decor" unique_id=977513415]
-material = SubResource("CanvasItemMaterial_xlogb")
+material = SubResource("CanvasItemMaterial_d0fql")
 position = Vector2(339, 160)
 script = ExtResource("6_yi81j")
 radius = 22.0
@@ -277,7 +277,7 @@ script = ExtResource("5_fg80w")
 prop_name = "chair"
 
 [node name="Glow5" type="Node2D" parent="Decor" unique_id=1716014510]
-material = SubResource("CanvasItemMaterial_1q41s")
+material = SubResource("CanvasItemMaterial_dbgp1")
 position = Vector2(154, 173)
 script = ExtResource("6_yi81j")
 radius = 14.0
@@ -296,7 +296,7 @@ prop_name = "lamp"
 glow = 2.2
 
 [node name="LightCone" type="Node2D" parent="Decor" unique_id=1150282919]
-material = SubResource("CanvasItemMaterial_4jirp")
+material = SubResource("CanvasItemMaterial_ocw3c")
 position = Vector2(32, 15)
 script = ExtResource("7_xtdsv")
 length = 153.0
@@ -313,7 +313,7 @@ prop_name = "lamp"
 glow = 2.2
 
 [node name="LightCone2" type="Node2D" parent="Decor" unique_id=4950658]
-material = SubResource("CanvasItemMaterial_wjwxy")
+material = SubResource("CanvasItemMaterial_1q5uq")
 position = Vector2(96, 15)
 script = ExtResource("7_xtdsv")
 length = 153.0
@@ -330,7 +330,7 @@ prop_name = "lamp"
 glow = 2.2
 
 [node name="LightCone3" type="Node2D" parent="Decor" unique_id=1099567562]
-material = SubResource("CanvasItemMaterial_gtmkp")
+material = SubResource("CanvasItemMaterial_6vgds")
 position = Vector2(160, 15)
 script = ExtResource("7_xtdsv")
 length = 121.0
@@ -347,7 +347,7 @@ prop_name = "lamp"
 glow = 2.2
 
 [node name="LightCone4" type="Node2D" parent="Decor" unique_id=1813600033]
-material = SubResource("CanvasItemMaterial_ad157")
+material = SubResource("CanvasItemMaterial_fuywf")
 position = Vector2(224, 15)
 script = ExtResource("7_xtdsv")
 length = 121.0
@@ -364,7 +364,7 @@ prop_name = "lamp"
 glow = 2.2
 
 [node name="LightCone5" type="Node2D" parent="Decor" unique_id=188776966]
-material = SubResource("CanvasItemMaterial_c3i0m")
+material = SubResource("CanvasItemMaterial_16tge")
 position = Vector2(288, 15)
 script = ExtResource("7_xtdsv")
 length = 129.0
@@ -381,7 +381,7 @@ prop_name = "lamp"
 glow = 2.2
 
 [node name="LightCone6" type="Node2D" parent="Decor" unique_id=752249479]
-material = SubResource("CanvasItemMaterial_5q4na")
+material = SubResource("CanvasItemMaterial_1nphh")
 position = Vector2(352, 15)
 script = ExtResource("7_xtdsv")
 length = 113.0
@@ -398,7 +398,7 @@ prop_name = "lamp"
 glow = 2.2
 
 [node name="LightCone7" type="Node2D" parent="Decor" unique_id=1715844602]
-material = SubResource("CanvasItemMaterial_gu34l")
+material = SubResource("CanvasItemMaterial_ciyj4")
 position = Vector2(416, 15)
 script = ExtResource("7_xtdsv")
 length = 113.0
@@ -415,7 +415,7 @@ prop_name = "lamp"
 glow = 2.2
 
 [node name="LightCone8" type="Node2D" parent="Decor" unique_id=182207694]
-material = SubResource("CanvasItemMaterial_yrpmq")
+material = SubResource("CanvasItemMaterial_88ktw")
 position = Vector2(480, 15)
 script = ExtResource("7_xtdsv")
 length = 81.0
@@ -432,7 +432,7 @@ prop_name = "lamp"
 glow = 2.2
 
 [node name="LightCone9" type="Node2D" parent="Decor" unique_id=741573207]
-material = SubResource("CanvasItemMaterial_sf6pw")
+material = SubResource("CanvasItemMaterial_thh07")
 position = Vector2(544, 15)
 script = ExtResource("7_xtdsv")
 length = 81.0
@@ -450,7 +450,7 @@ glow = 1.9
 flicker = 1
 
 [node name="Glow6" type="Node2D" parent="Decor" unique_id=1753869024]
-material = SubResource("CanvasItemMaterial_xktno")
+material = SubResource("CanvasItemMaterial_ivanv")
 position = Vector2(64, 92)
 script = ExtResource("6_yi81j")
 color = Color(1, 0.30980393, 0.6039216, 1)
@@ -469,25 +469,14 @@ glow = 1.9
 flicker = 1
 
 [node name="Glow7" type="Node2D" parent="Decor" unique_id=2029276759]
-material = SubResource("CanvasItemMaterial_qqjfw")
+material = SubResource("CanvasItemMaterial_8td5s")
 position = Vector2(296, 68)
 script = ExtResource("6_yi81j")
 color = Color(1, 0.30980393, 0.6039216, 1)
 strength = 0.14
 
-[node name="SignExit" type="Sprite2D" parent="Decor" unique_id=2015759943]
-position = Vector2(534, 60)
-texture = ExtResource("4_bsewb")
-centered = false
-offset = Vector2(-20, -11)
-region_enabled = true
-region_rect = Rect2(58, 31, 40, 11)
-script = ExtResource("5_fg80w")
-prop_name = "sign_exit"
-glow = 1.6
-
 [node name="Glow8" type="Node2D" parent="Decor" unique_id=645412776]
-material = SubResource("CanvasItemMaterial_icv51")
+material = SubResource("CanvasItemMaterial_0tfsk")
 position = Vector2(534, 55)
 script = ExtResource("6_yi81j")
 radius = 18.0
