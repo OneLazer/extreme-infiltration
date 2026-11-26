@@ -29,14 +29,14 @@ func _ready() -> void:
 
 
 func _apply() -> void:
-	if not is_inside_tree():
-		return
 	var r := Prop.rect_of(prop_name)
 	texture = ATLAS
 	region_enabled = true
 	region_rect = r
 	centered = false
 	offset = Vector2(-floorf(r.size.x / 2.0), -r.size.y)
+	if not is_inside_tree():
+		return   # 还没进树（工具生成场景时）只写贴图属性，发光层等 _ready 再建
 	if _emit == null:
 		_emit = Sprite2D.new()
 		_emit.texture = EMIT

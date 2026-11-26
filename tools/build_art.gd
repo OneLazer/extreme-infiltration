@@ -12,7 +12,10 @@ const TILES_PNG := "res://assets/tiles/street_tiles.png"
 const TILES_JSON := "res://assets/tiles/street_tiles.json"
 const TILESET_PATH := "res://assets/tiles/street_tileset.tres"
 const BACKDROP_PATH := "res://scenes/art/street_backdrop.tscn"
-const LEVELS := ["res://levels/level_01.tscn"]
+const LEVELS := ["res://levels/level_01.tscn", "res://levels/level_02.tscn", "res://levels/level_03.tscn",
+	"res://levels/level_04.tscn", "res://levels/level_05.tscn", "res://levels/level_06.tscn",
+	"res://levels/level_07.tscn", "res://levels/level_08.tscn", "res://levels/level_09.tscn",
+	"res://levels/level_10.tscn", "res://levels/level_11.tscn", "res://levels/level_12.tscn"]
 
 ## 掩码位：N=1 NE=2 E=4 SE=8 S=16 SW=32 W=64 NW=128
 const BIT_NEIGHBOR := {
@@ -205,6 +208,11 @@ func _empty(tm: TileMapLayer, c: Vector2i) -> bool:
 	return tm.get_cell_source_id(c) < 0 and tm.get_used_rect().has_point(c)
 
 
+## 地图外不算地板：地面上物件只摆在地图内部的墙面上
+func _solid(tm: TileMapLayer, c: Vector2i) -> bool:
+	return tm.get_used_rect().has_point(c) and tm.get_cell_source_id(c) >= 0
+
+
 func _clear_up(tm: TileMapLayer, c: Vector2i) -> int:
 	var n := 0
 	while _empty(tm, c + Vector2i(0, -n - 1)) and n < 40:
@@ -226,11 +234,11 @@ func _place_decor(root: Node, decor: Node2D, tm: TileMapLayer) -> void:
 	for cy in range(r.position.y, r.end.y):
 		var cx := r.position.x
 		while cx < r.end.x:
-			if not (_empty(tm, Vector2i(cx, cy)) and not _empty(tm, Vector2i(cx, cy + 1))):
+			if not (_empty(tm, Vector2i(cx, cy)) and _solid(tm, Vector2i(cx, cy + 1))):
 				cx += 1
 				continue
 			var start := cx
-			while cx < r.end.x and _empty(tm, Vector2i(cx, cy)) and not _empty(tm, Vector2i(cx, cy + 1)):
+			while cx < r.end.x and _empty(tm, Vector2i(cx, cy)) and _solid(tm, Vector2i(cx, cy + 1)):
 				cx += 1
 			_dress_floor(decor, tm, rng, start * T, cx * T, (cy + 1) * T, avoid)
 	_place_lamps(decor, tm, r)
@@ -304,11 +312,11 @@ func _place_lamps(decor: Node2D, tm: TileMapLayer, r: Rect2i) -> void:
 		var cx := r.position.x
 		while cx < r.end.x:
 			var c := Vector2i(cx, cy)
-			if not (_empty(tm, c) and not _empty(tm, c + Vector2i.UP)):
+			if not (_empty(tm, c) and _solid(tm, c + Vector2i.UP)):
 				cx += 1
 				continue
 			var start := cx
-			while cx < r.end.x and _empty(tm, Vector2i(cx, cy)) and not _empty(tm, Vector2i(cx, cy - 1)):
+			while cx < r.end.x and _empty(tm, Vector2i(cx, cy)) and _solid(tm, Vector2i(cx, cy - 1)):
 				cx += 1
 			var x := start * T + 24
 			while x < cx * T - 12:
@@ -346,5 +354,31 @@ func _place_signs(root: Node, decor: Node2D, tm: TileMapLayer, rng: RandomNumber
 				break
 	var ex := root.find_child("Exit", true, false) as Node2D
 	if ex:
-		_prop(decor, "sign_exit", ex.position.x - 14, ex.position.y - 28, 1.6)
-		_glow(decor, ex.position + Vector2(-14, -33), 18.0, Color(0.3, 1.0, 0.55), 0.1)
+		var at := _sign_spot(tm, ex.position, Vector2(40, 11))
+		_prop(decor, "sign_exit", at.x, at.y, 1.6)
+		_glow(decor, at + Vector2(0, -5), 18.0, Color(0.3, 1.0, 0.55), 0.1)
+
+
+## 出口标识默认挂在出口左上；那里是墙就在出口上方挪一挪，挑最接近默认位、且不被墙体盖住的位置
+func _sign_spot(tm: TileMapLayer, ex_pos: Vector2, size: Vector2) -> Vector2:
+	var best := ex_pos + Vector2(-14, -28)
+	var best_d := INF
+	for dx in [-20, -14, -8, -2, 4, 10, 16, 22]:
+		for dy in [-28, -24, -20, -16, -12]:
+			var p := ex_pos + Vector2(dx, dy)
+			if not _rect_clear(tm, p, size):
+				continue
+			var d := Vector2(dx + 14, dy + 28).length()
+			if d < best_d:
+				best_d = d
+				best = p
+	return best
+
+
+func _rect_clear(tm: TileMapLayer, bottom_center: Vector2, size: Vector2) -> bool:
+	var box := Rect2(bottom_center - Vector2(size.x / 2.0, size.y), size)
+	for cx in range(floori(box.position.x / T), floori((box.end.x - 0.5) / T) + 1):
+		for cy in range(floori(box.position.y / T), floori((box.end.y - 0.5) / T) + 1):
+			if not _empty(tm, Vector2i(cx, cy)):
+				return false
+	return true
